@@ -13,7 +13,7 @@
       ]
     }
   },
-  "postCreateCommand": "apt update -y && apt install awscli -y && pip install -r .devcontainer/requirements.txt",
+  "postCreateCommand": "curl -fsSL https://deb.nodesource.com/setup_23.x -o nodesource_setup.sh && bash nodesource_setup.sh && apt update -y && apt install nodejs awscli -y && npm install react-router-dom && pip install -r .devcontainer/requirements.txt",
   "mounts": [
     "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
   ],
