@@ -1,0 +1,17 @@
+# Core dependencies
+Django>=4.2,<5.0             # Django framework (LTS version)
+
+# Database adapter
+psycopg2>=2.9.7              # PostgreSQL adapter for Python
+
+# Development tools
+python-decouple>=3.8         # Simplifies environment variable management
+flake8>=6.1.0                # Linter for clean Python code
+black>=23.9.1                # Automatic code formatter
+
+# Testing
+pytest>=7.4.2                # General-purpose testing framework
+pytest-django>=4.5.2         # Django-specific pytest extensions
+
+# Production server
+daphne>=4.0.0                # ASGI server for handling WebSocket connections
