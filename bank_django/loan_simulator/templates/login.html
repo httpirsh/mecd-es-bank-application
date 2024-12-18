@@ -33,10 +33,10 @@
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             // Convert the canvas image to Base64
-            const imageBase64 = canvas.toDataURL('image/jpeg');
+            const imageBase64 = canvas.toDataURL('image/jpeg').split(';base64,')[1]; // only send the Base64 part
 
             // Send the image to the server for authentication
-            fetch('/facial-login/', {
+            fetch('/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -48,9 +48,9 @@
             .then(data => {
                 if (data.success) {
                     alert("Login successful!");
-                    window.location.href = '/';
+                    window.location.href = '/'; // Redirect on success
                 } else {
-                    alert("Authentication failed!");
+                    alert("Authentication failed: " + data.error);
                 }
             })
             .catch(err => console.error("Error during login: ", err));

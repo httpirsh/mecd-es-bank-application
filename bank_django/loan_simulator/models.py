@@ -12,7 +12,7 @@ class LoanSimulation(models.Model):
             raise ValidationError("You can only set 'duration' or 'desired_monthly_payment', not both.")
         if not self.duration and not self.desired_monthly_payment:
             raise ValidationError("You must set either 'duration' or 'desired_monthly_payment'.")
-
+           
 class LoanDetails(models.Model):
     #loan_simulation = models.ForeignKey(LoanSimulation)
     interest_rate = models.FloatField("Interest rate (%)")

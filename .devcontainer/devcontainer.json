@@ -1,21 +1,29 @@
 {
   "name": "Loans Dev Environment",
-  "image": "python:3",  // Use a prebuilt Python image
+  "image": "python:3",
   "customizations": {
-    "vscode": {
-      "settings": {
-        "python.pythonPath": "/usr/local/bin/python"
-      },
-      "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-azuretools.vscode-docker"
-      ]
-    }
+      "vscode": {
+          "settings": {
+              "python.pythonPath": "/usr/local/bin/python"
+          },
+          "extensions": [
+              "ms-python.python",
+              "ms-python.vscode-pylance",
+              "ms-azuretools.vscode-docker"
+          ]
+      }
   },
   "postCreateCommand": "curl -fsSL https://deb.nodesource.com/setup_23.x -o nodesource_setup.sh && bash nodesource_setup.sh && apt update -y && apt install nodejs awscli -y && npm install react-router-dom && pip install -r .devcontainer/requirements.txt",
   "mounts": [
-    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+      "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
   ],
-  "workspaceFolder": "/workspace"
+  "workspaceFolder": "/workspace",
+  "remoteEnv": {
+    "AWS_BUCKET_NAME": "userfacesbucket",
+    "AWS_COLLECTION_NAME": "userfaces",
+    "AWS_DEFAULT_REGION":"us-east-1",
+    "AWS_ACCESS_KEY_ID": "ASIATCKAQ7JQTWMJ3Z6C",
+    "AWS_SECRET_ACCESS_KEY": "IHGT6cbXCEKdLhxTUYjsCLbni8Y/JsQR8k5QAJXK",
+    "AWS_SESSION_TOKEN": "IQoJb3JpZ2luX2VjEIj//////////wEaCXVzLXdlc3QtMiJHMEUCIAprWe5k/4SUkNV0nddLcMenSEIzy6/pMSCGTrJ+06xLAiEA43ZNkoFcD2NjZAuFVGsBbaS3lMbFnR+uF3Ii26VxFugqtAIIURAAGgwyMTExMjU1OTg4MTciDLCnogmZnwI/whFS+CqRAv5++SRcvbyPmcg8RemQk3X3hPEdGNnNlA/E43EA1d78uPC9HC96Joeft9nIoWRGX4QpDj+hJg1T0jAHbMByGujUaDu3LCXgy3i/DYlYMZrMWS5JZb0a89rT15s5MWLWZgsl7/mUmqBQ8m3IBq/mm9ObYbf0M7BvHyAqart2cxygUFAqpI/W/9Bhq7gSQFHDvRSrjM39cp7cTStVOcMGWQMMCs4cJIlG8//J/s65RtbQ9tyQZonOYR2wUX+EZyBsf+7bq1rCAXgkHiEfTQoFzN5cGXRVGpCho371L+i7y2bqZdRmglbyCw9BwqqndpDqrxsaTt7Bse716lnd8wavQ2Hw/bVpyjGop/cUzpbtz7aYyTDqkYi7BjqdAfUlDjcjulA+83uI6dWD98gyw5mpZO7/s0U4Q5UToZzwe/KIvuoHfmqEXz80tkZwXVj4M1zY6dsVGPLY8hSAGrWxi2/cNOM5Nyg8BPKCPrwUQx5aIf/k4ywOcrtkPdTLmbRMUszGkQKA++BgOYK5B58A7TiJRepy4thj18+rmYu9+hYIyxGFBUJeDQngkyLiVMnUCJVzGllMdcZbrPE="
+}
 }
