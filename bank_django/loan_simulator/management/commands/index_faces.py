@@ -12,8 +12,9 @@ class Command(BaseCommand):
         collection_name = os.environ['AWS_COLLECTION_NAME']
 
         # Initialize S3 and Rekognition clients
-        s3 = boto3.resource('s3', region_name=os.environ['AWS_DEFAULT_REGION'])
-        rekognition_client = boto3.client('rekognition', region_name=os.environ['AWS_DEFAULT_REGION'])
+        region = os.environ['AWS_DEFAULT_REGION']
+        s3 = boto3.resource('s3', region_name=region)
+        rekognition_client = boto3.client('rekognition', region_name=region)
 
         # Create or verify Rekognition collection
         try:
@@ -47,7 +48,7 @@ class Command(BaseCommand):
                     # Retrieve the face ID from the response
                     for face_record in response['FaceRecords']:
                         face_id = face_record['Face']['FaceId']
-                        self.stdout.write(self.style.SUCCESS(f"Face ID: {face_id}"))
+                        self.stdout.write(self.style.SUCCESS(f"Filename: {filename}, Face ID: {face_id}"))
 
                         # Optionally, you can print or log the face_id for further processing
                         
@@ -56,10 +57,11 @@ class Command(BaseCommand):
                         
                         # Find the user by name (username)
                         try:
-                            user = User.objects.get(name=username)
+                            self.stdout.write(self.style.NOTICE(f"Searching for user {username} in dynamo..."))
+                            user = User.get(username)
                             user.face_id = face_id  # Assign the Rekognition face_id to the user
                             user.save()  # Save the user object with the updated face_id
-                            self.stdout.write(self.style.SUCCESS(f"Updated user {user.name} with face_id {face_id}"))
+                            self.stdout.write(self.style.SUCCESS(f"Updated user {user.username} with face_id {face_id}"))
                         except User.DoesNotExist:
                             self.stdout.write(self.style.ERROR(f"User with name {username} not found"))
                 

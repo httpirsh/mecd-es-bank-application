@@ -1,7 +1,9 @@
-import boto3
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.conf import settings
+from botocore.exceptions import ClientError
+import boto3
 
 class LoanSimulation(models.Model):
     amount = models.IntegerField("Amount (€)", default=1000) 
@@ -72,17 +74,75 @@ class LoanApplication(models.Model):
         return f"Loan Application for {self.loan_simulation.amount}€"
     
 
+# Initialize the DynamoDB client
+dynamodb = boto3.resource(
+    "dynamodb",
+    region_name=settings.AWS_REGION
+)
+
 class User(models.Model):
-    face_id = models.CharField(primary_key=True, max_length=255)
-    name = models.CharField(max_length=255)
+    username = models.CharField(primary_key=True, max_length=255)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
+    face_id = models.CharField(max_length=255)
 
     class Meta:
         db_table = 'User'
 
     def __str__(self):
         return f"User {self.name} ({self.face_id})"
+
+    # Define the DynamoDB table name
+    DYNAMODB_TABLE_NAME = "Users"
+
+    @classmethod
+    def get_dynamo_table(cls):
+        """Fetch the DynamoDB table object."""
+        return dynamodb.Table(cls.DYNAMODB_TABLE_NAME)
+
+    def save(self, *args, **kwargs):
+        """Override the save method to write to DynamoDB."""
+        # Prepare item for DynamoDB
+        item = {
+            "username": self.username,
+            "email": self.email,
+            "phone": self.phone,
+            "face_id": self.face_id
+        }
+
+        # Write item to DynamoDB
+        table = self.get_dynamo_table()
+        try:
+            table.put_item(Item=item)
+        except ClientError as e:
+            raise Exception(f"Error saving to DynamoDB: {e}")
+
+    @classmethod
+    def get(cls, username):
+        """Fetch a user by ID from DynamoDB."""
+        table = cls.get_dynamo_table()
+        try:
+            response = table.get_item(Key={"username": username})
+            if "Item" in response:
+                item = response["Item"]
+                return cls(
+                    username=item["username"],
+                    email=item["email"],
+                    phone=item["phone"],
+                    face_id=item["face_id"],
+                )
+            else:
+                return None
+        except ClientError as e:
+            raise Exception(f"Error fetching from DynamoDB: {e}")
+
+    def delete(self, *args, **kwargs):
+        """Delete a user from DynamoDB."""
+        table = self.get_dynamo_table()
+        try:
+            table.delete_item(Key={"username": self.username})
+        except ClientError as e:
+            raise Exception(f"Error deleting from DynamoDB: {e}")
 
 
 
