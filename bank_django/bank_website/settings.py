@@ -64,11 +64,25 @@ ASGI_APPLICATION = "bank_website.asgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'db-loan-applications',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'db-loan-applications.cbossg46mje3.us-east-1.rds.amazonaws.com',
+        'PORT': '5432',
     }
 }
+
+# AWS Configuration from environment variables
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN', '')
+AWS_REGION = os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
+
+AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
+AWS_COLLECTION_NAME = os.getenv('AWS_COLLECTION_NAME', 'userfaces')
+AWS_DYNAMO_TABLE_NAME = os.getenv('AWS_DYNAMO_TABLE_NAME', 'Users')
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -110,13 +124,3 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# Load environment variables
-load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
-
-# AWS Configuration
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN', '')
-
-REKOGNITION_COLLECTION_ID = os.getenv('AWS_COLLECTION_NAME', 'userfaces')
