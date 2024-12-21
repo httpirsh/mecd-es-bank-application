@@ -16,10 +16,25 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.views.generic import TemplateView
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include("home.urls")),
-    path("", include("loan_simulator.urls"))
+    path("api/", include("loan_simulator.urls")),
 ]
+
+# This section is required to integrate vite processing.
+# Refer to https://medium.com/@lohit-behera/integrating-django-with-vite-react-a346f829045d
+
+assets_url_pattern = '|'.join([
+    settings.ASSETS_URL.lstrip('/')
+])
+
+urlpatterns += [
+    re_path(rf'^(?!({assets_url_pattern})).*$', TemplateView.as_view(template_name='index.html')),
+]
+
+urlpatterns += static(settings.ASSETS_URL, document_root=settings.ASSETS_ROOT)

@@ -44,7 +44,9 @@ ROOT_URLCONF = "bank_website.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": ["loan_simulator/templates"],
+        "DIRS": [
+                os.path.join(BASE_DIR, 'frontend', 'dist'),
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -57,8 +59,10 @@ TEMPLATES = [
     },
 ]
 
-ASGI_APPLICATION = "bank_website.asgi.application"
+ASSETS_ROOT = os.path.join(BASE_DIR, 'frontend', 'dist', 'assets')
+ASSETS_URL = '/assets/'
 
+ASGI_APPLICATION = "bank_website.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -102,7 +106,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -113,7 +116,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
