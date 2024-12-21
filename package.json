@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "react-router-dom": "^6.28.1",
+    "save-dev": "^0.0.1-security",
+    "vite": "^6.0.5"
+  }
+}
