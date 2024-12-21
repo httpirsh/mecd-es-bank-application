@@ -4,3 +4,4 @@ nodesource_setup.sh
 package-lock.json
 package.json
 node_modules
+bank_django/frontend/dist
