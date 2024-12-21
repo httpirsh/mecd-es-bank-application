@@ -1,16 +1,15 @@
-from bank_website.settings import JWT_SECRET_KEY
 from .models import LoanSimulation, LoanDetails, User
 from boto3.dynamodb.conditions import Attr
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.conf import settings
 from django.views import View
+from utils import generate_jwt_token, verify_jwt_token
 import datetime
 import base64
 import os
 import boto3
 import json
-import jwt
 
 # Initialize Rekognition and DynamoDB clients
 rekognition_client = boto3.client('rekognition', region_name=os.environ.get("AWS_DEFAULT_REGION"))
@@ -90,8 +89,18 @@ class LoginView(View):
                     print(f"Found user: {user.username}")
                     # Generate JWT Token
                     token = generate_jwt_token(user)
-                    return JsonResponse({"success": True, "token":token})
-                
+
+                    # Set the token in an HTTP-only cookie
+                    response = JsonResponse({"success": True, "message": "Login successful"})
+                    response.set_cookie(
+                        'jwt_token',
+                        token,
+                        max_age=datetime.timedelta(days=1),
+                        httponly=True, # Cannot be accessed via JavaScript
+                        secure=True, # Use only over HTTPS
+                        samesite='Strict' # Protects against CSRF attacks
+                    )
+                    return response
                 else:
                     return JsonResponse({"error": "Face not recognized"}, status=401)
             else:
@@ -134,58 +143,21 @@ class LoginView(View):
             print(f"Error retrieving user from DynamoDB: {e}")
             return None
 
-class ProtectedResourceView(View):
     def get(self, request, *args, **kwargs):
-        # Check for the token in the Authorization header
-        token = request.headers.get('Authorization')
-        if not token:
-            return JsonResponse({"error": "Token is required"}, status=401)
-
-        try:
-            # Remove the "Bearer " prefix from the token if present
-            if token.startswith('Bearer '):
-                token = token[7:]
-
-            # Verify the JWT token
-            payload = verify_jwt_token(token)
-            username = payload.get('username')
-
-            # Retrieve the user from the database using the username
-            user = User.objects.get(username=username)
-
-            # If the user is found, return the protected resource
-            return JsonResponse({"message": f"Hello, {user.username}!"})
-
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=401)
-    
-
-# Functions -----------------------
-
-def generate_jwt_token(user):
-    """Generate JWT token for the user."""
-    payload = {
-        'username': user.username,
-        'email': user.email,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)  # Set expiration time for token
-    }
-    
-    token = jwt.encode(payload, JWT_SECRET_KEY, algorithm='HS256')
-
-    # Log the token for debugging (BE CAREFUL in production, as logging tokens can be a security risk)
-    print(f"Generated JWT Token: {token}")
-
-    return token
+        return render(request, "login.html")
 
 def index(request):
+    print("Rendering login.html")
     return render(request, "login.html")
 
-def verify_jwt_token(token):
-    try:
-        # Decode the token using the secret key
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
-        return payload  # Return the decoded payload if the token is valid
-    except jwt.ExpiredSignatureError:
-        raise Exception('Token has expired')
-    except jwt.InvalidTokenError:
-        raise Exception('Invalid token')
+
+class ProtectedResourceView(View):
+    def get(self, request, *args, **kwargs):
+        # Verify the JWT token
+        payload = verify_jwt_token(request)
+        
+        # If the token is invalid, the function will return a JsonResponse with error
+        if isinstance(payload, JsonResponse):
+            return payload
+
+        return JsonResponse({"message": "Protected resource accessed", "user": payload['username']})

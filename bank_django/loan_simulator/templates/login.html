@@ -36,7 +36,7 @@
             const imageBase64 = canvas.toDataURL('image/jpeg').split(';base64,')[1]; // only send the Base64 part
 
             // Send the image to the server for authentication
-            fetch('/login/', {
+            fetch('/api/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
