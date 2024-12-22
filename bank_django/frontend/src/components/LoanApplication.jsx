@@ -70,11 +70,11 @@ const LoanApplication = () => {
       setResult(data);
 
       // Show the result based on the application status
-      if (data.application_status === "accept") {
+      if (data.application_status === "Accepted") {
         alert("Loan application approved!");
-      } else if (data.application_status === "interview") {
+      } else if (data.application_status === "Interview") {
         alert("Loan requires further review.");
-      } else {
+      } else if (data.application_status === "Rejected") {
         alert("Loan application rejected.");
       }
     } catch (err) {

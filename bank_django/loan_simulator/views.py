@@ -205,8 +205,8 @@ class LoanApplicationView(View):
         Classify loan application based on the credit score.
         """
         if credit_score >= 70:
-            return "accept"
+            return "Accepted"
         elif credit_score >= 40:
-            return "interview"
+            return "Interview"
         else:
-            return "reject"
+            return "Rejected"
