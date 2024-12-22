@@ -150,7 +150,6 @@ def index(request):
     print("Rendering login.html")
     return render(request, "login.html")
 
-
 class ProtectedResourceView(View):
     def get(self, request, *args, **kwargs):
         # Verify the JWT token
@@ -161,3 +160,53 @@ class ProtectedResourceView(View):
             return payload
 
         return JsonResponse({"message": "Protected resource accessed", "user": payload['username']})
+
+class LoanApplicationView(View):
+    def post(self, request):
+        try:
+            # Parse the JSON data from the request body
+            data = json.loads(request.body.decode('utf-8'))  # Decode to UTF-8 and parse JSON
+
+            # Extract data from the parsed JSON
+            monthly_income = int(data.get("monthly_income"))
+            monthly_expenses = int(data.get("monthly_expenses"))
+            loan_amount = int(data.get("loan_amount"))
+            loan_duration = int(data.get("loan_duration"))
+
+            # Calculate the credit score and classify the application
+            credit_score = self.calculate_credit_score(monthly_income, monthly_expenses, loan_amount, loan_duration)
+            application_status = self.classify_application(credit_score)
+
+            # Return a JsonResponse with the results
+            return JsonResponse({
+                "credit_score": credit_score,
+                "application_status": application_status
+            })
+
+        except Exception as e:
+            # Return an error message if parsing fails
+            return JsonResponse({"error": str(e)}, status=400)
+
+    def calculate_credit_score(self, monthly_income, monthly_expenses, loan_amount, loan_duration):
+        """
+        Simplified formula for credit score calculation.
+        """
+        score = 100
+        expense_ratio = (monthly_expenses / monthly_income) * 100
+        score -= expense_ratio
+
+        loan_risk = loan_amount / (monthly_income * loan_duration) * 100
+        score -= loan_risk
+
+        return max(0, min(int(score), 100))
+
+    def classify_application(self, credit_score):
+        """
+        Classify loan application based on the credit score.
+        """
+        if credit_score >= 70:
+            return "accept"
+        elif credit_score >= 40:
+            return "interview"
+        else:
+            return "reject"

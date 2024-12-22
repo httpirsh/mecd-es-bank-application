@@ -64,7 +64,7 @@ const Login = () => {
       .then(data => {
         if (data.success) {
           alert("Login successful!");
-          window.location.href = '/'; // Redirect on success
+          window.location.href = '/loan-application'; // Redirect on success
         } else {
           alert("Authentication failed: " + data.error);
         }
