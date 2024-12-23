@@ -63,16 +63,23 @@ class LoanDetails(models.Model):
         return f"LoanDetails for {self.loan_simulation.amount}€"
 
 class LoanApplication(models.Model):
-    loan_simulation = models.ForeignKey(LoanSimulation, on_delete=models.CASCADE, default=1)
-    loan_details = models.ForeignKey(LoanDetails, on_delete=models.CASCADE, null=True, blank=True)
-
-    monthly_income = models.IntegerField("Monthly income (€)", default=2000)
-    monthly_expenses = models.IntegerField("Monthly expenses (€)", default=500)
-    application_date = models.DateTimeField(auto_now_add=True)
-
+    username = models.CharField(max_length=255, default='default_username') # Store the username
+    monthly_income = models.IntegerField(default=0)
+    monthly_expenses = models.IntegerField(default=0)
+    loan_amount = models.IntegerField(default=0) 
+    loan_duration = models.IntegerField(default=12)
+    credit_score = models.IntegerField(default=0)
+    application_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('accept', 'Accepted'),
+            ('interview', 'Interview'),
+            ('reject', 'Rejected')
+        ],
+        default='accept'
+    )
     def __str__(self):
-        return f"Loan Application for {self.loan_simulation.amount}€"
-    
+        return f"Loan Application for {self.username}"    
 
 # Initialize the DynamoDB client
 dynamodb = boto3.resource(
@@ -88,6 +95,7 @@ class User(models.Model):
 
     class Meta:
         db_table = 'User'
+        managed = False # Tell Django not to manage this table, bacause Django does not natively support DynamoDB
 
     def __str__(self):
         return f"User {self.name} ({self.face_id})"

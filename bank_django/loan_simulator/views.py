@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.conf import settings
 from django.views import View
-from utils import generate_jwt_token, verify_jwt_token
+from utils import generate_jwt_token, verify_jwt_token, decode_jwt_token, get_user_from_dynamodb, save_loan_application
 import datetime
 import base64
 import os
@@ -160,12 +160,30 @@ class ProtectedResourceView(View):
             return payload
 
         return JsonResponse({"message": "Protected resource accessed", "user": payload['username']})
-
+    
+    
 class LoanApplicationView(View):
     def post(self, request):
         try:
+            # Retrieve the JWT token from cookies
+            token = request.COOKIES.get('jwt_token')
+            if not token:
+                return JsonResponse({"error": "Token is missing"}, status=400)
+
+            # Decode the JWT token and extract the username
+            try:
+                user_data = decode_jwt_token(token)
+                username = user_data.get("username")
+            except Exception as e:
+                return JsonResponse({"error": str(e)}, status=401)
+
+            # Fetch the user from DynamoDB using the username
+            user = get_user_from_dynamodb(username)
+            if not user:
+                return JsonResponse({"error": "User not found"}, status=404)
+
             # Parse the JSON data from the request body
-            data = json.loads(request.body.decode('utf-8'))  # Decode to UTF-8 and parse JSON
+            data = json.loads(request.body.decode('utf-8'))
 
             # Extract data from the parsed JSON
             monthly_income = int(data.get("monthly_income"))
@@ -177,16 +195,30 @@ class LoanApplicationView(View):
             credit_score = self.calculate_credit_score(monthly_income, monthly_expenses, loan_amount, loan_duration)
             application_status = self.classify_application(credit_score)
 
+            # Save the loan application linked to the user
+            loan_application = save_loan_application(
+                user=user,
+                monthly_income=monthly_income,
+                monthly_expenses=monthly_expenses,
+                loan_amount=loan_amount,
+                loan_duration=loan_duration,
+                credit_score=credit_score,
+                application_status=application_status
+            )
+
             # Return a JsonResponse with the results
             return JsonResponse({
                 "credit_score": credit_score,
-                "application_status": application_status
+                "application_status": application_status,
+                "loan_application_id": loan_application.id
             })
 
         except Exception as e:
             # Return an error message if parsing fails
             return JsonResponse({"error": str(e)}, status=400)
 
+    # eliminarrrr -------------------
+    # substituir pelo workflow
     def calculate_credit_score(self, monthly_income, monthly_expenses, loan_amount, loan_duration):
         """
         Simplified formula for credit score calculation.
@@ -200,6 +232,7 @@ class LoanApplicationView(View):
 
         return max(0, min(int(score), 100))
 
+    # substituir pelo workflow
     def classify_application(self, credit_score):
         """
         Classify loan application based on the credit score.
