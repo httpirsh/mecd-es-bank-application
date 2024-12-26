@@ -8,7 +8,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("loan_simulator", "0001_initial"),
+        ("api", "0001_initial"),
     ]
 
     operations = [
@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to="loan_simulator.loandetails",
+                to="api.loandetails",
             ),
         ),
         migrations.AddField(
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 default=1,
                 on_delete=django.db.models.deletion.CASCADE,
-                to="loan_simulator.loansimulation",
+                to="api.loansimulation",
             ),
         ),
         migrations.AddField(
@@ -46,11 +46,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="loandetails",
-            name="loan_simulation",
+            name="api",
             field=models.ForeignKey(
                 default=1,
                 on_delete=django.db.models.deletion.CASCADE,
-                to="loan_simulator.loansimulation",
+                to="api.loansimulation",
             ),
         ),
         migrations.AlterField(

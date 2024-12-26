@@ -40,13 +40,6 @@ class LoanApplicationAdmin(admin.ModelAdmin):
         queryset.update(application_status='reject')
         self.message_user(request, "Selected loans have been rejected!")
 
-    # You can add a custom link in the list view for viewing loan application details
-    def view_details(self, obj):
-        """Add a link to view loan details"""
-        return format_html('<a href="/admin/loan_simulator/loanapplication/{}/change/">View</a>', obj.pk)
-
-    view_details.short_description = 'View Details'
-
 # Register the LoanApplication model
 #admin.site.register(LoanApplication, LoanApplicationAdmin)
 

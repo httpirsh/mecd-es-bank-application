@@ -112,7 +112,7 @@ class LoginView(View):
 
     def get_user_by_face_id(self, face_id):
         """
-        Recovers the Django user based on face_id.
+        Retrieves user by face_id.
         """
         try:
             dynamodb = boto3.resource('dynamodb', region_name=settings.AWS_REGION)
@@ -143,13 +143,6 @@ class LoginView(View):
             print(f"Error retrieving user from DynamoDB: {e}")
             return None
 
-    def get(self, request, *args, **kwargs):
-        return render(request, "login.html")
-
-def index(request):
-    print("Rendering login.html")
-    return render(request, "login.html")
-
 class ProtectedResourceView(View):
     def get(self, request, *args, **kwargs):
         # Verify the JWT token
@@ -160,8 +153,7 @@ class ProtectedResourceView(View):
             return payload
 
         return JsonResponse({"message": "Protected resource accessed", "user": payload['username']})
-    
-    
+
 class LoanApplicationView(View):
     def post(self, request):
         try:

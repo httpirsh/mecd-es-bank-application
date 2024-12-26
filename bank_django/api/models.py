@@ -159,7 +159,3 @@ class User(models.Model):
             table.delete_item(Key={"username": self.username})
         except ClientError as e:
             raise Exception(f"Error deleting from DynamoDB: {e}")
-
-
-
-

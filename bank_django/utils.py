@@ -1,4 +1,4 @@
-from loan_simulator.models import LoanApplication
+from api.models import LoanApplication
 from django.conf import settings
 from django.http import JsonResponse
 import boto3
@@ -72,7 +72,7 @@ def get_user_from_dynamodb(username):
 
 def save_loan_application(user, monthly_income, monthly_expenses, loan_amount, loan_duration, credit_score, application_status):
     """
-    Saves the loan application linked to the user in PostgreSQL.
+    Saves the loan application linked to the user in database.
     """
     loan_application = LoanApplication(
         username=user['username'],  # Link the application to the user
@@ -84,5 +84,5 @@ def save_loan_application(user, monthly_income, monthly_expenses, loan_amount, l
         application_status=application_status
     )
 
-    loan_application.save()  # Save the loan application to PostgreSQL
+    loan_application.save()  # Save the loan application to database
     return loan_application

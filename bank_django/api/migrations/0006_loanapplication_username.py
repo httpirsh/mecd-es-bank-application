@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("loan_simulator", "0005_alter_user_options_and_more"),
+        ("api", "0005_alter_user_options_and_more"),
     ]
 
     operations = [

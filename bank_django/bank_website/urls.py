@@ -23,7 +23,7 @@ from django.conf import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/", include("loan_simulator.urls")),
+    path("api/", include("api.urls")),
 ]
 
 # This section is required to integrate vite processing.

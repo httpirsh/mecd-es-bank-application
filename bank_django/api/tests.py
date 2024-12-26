@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from loan_simulator.models import LoanSimulation
+from api.models import LoanSimulation
 
 class LoanTestCase(TestCase):
 

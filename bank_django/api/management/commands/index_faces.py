@@ -1,7 +1,7 @@
 import boto3
 import os
 from django.core.management.base import BaseCommand
-from loan_simulator.models import User
+from api.models import User
 
 class Command(BaseCommand):
     help = 'Indexes images from S3 into AWS Rekognition collection.'

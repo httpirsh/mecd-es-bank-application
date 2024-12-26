@@ -20,7 +20,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
-    "loan_simulator",
+    "api",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -44,7 +44,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    #"loan_simulator.middleware.JWTAuthenticationMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
 ]
 
@@ -55,7 +54,6 @@ TEMPLATES = [
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
                 os.path.join(BASE_DIR, 'frontend', 'dist'),
-                os.path.join(BASE_DIR, 'loan_simulator', 'templates'),
         ],
         "APP_DIRS": True,
         "OPTIONS": {
