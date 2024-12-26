@@ -77,6 +77,11 @@ class LoanApplication(models.Model):
             ('reject', 'Rejected')
         ],
         default='accept'
+
+    # Fields for interview date and loan officer/bank employer
+    #interview_date = models.DateTimeField(null=True, blank=True)
+    #loan_officer = models.CharField(max_length=255, null=True, blank=True)
+
     )
     def __str__(self):
         return f"Loan Application for {self.username}"    
@@ -92,6 +97,7 @@ class User(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=20)
     face_id = models.CharField(max_length=255)
+    user_type = models.CharField(max_length=255)
 
     class Meta:
         db_table = 'User'
@@ -115,7 +121,8 @@ class User(models.Model):
             "username": self.username,
             "email": self.email,
             "phone": self.phone,
-            "face_id": self.face_id
+            "face_id": self.face_id,
+            "user_type": self.user_type
         }
 
         # Write item to DynamoDB
@@ -138,6 +145,7 @@ class User(models.Model):
                     email=item["email"],
                     phone=item["phone"],
                     face_id=item["face_id"],
+                    user_type=item["user_type"]
                 )
             else:
                 return None

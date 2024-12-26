@@ -1,7 +1,7 @@
 import boto3
 import os
 from django.core.management.base import BaseCommand
-from loan_simulator.models import User  # Importe o modelo User
+from loan_simulator.models import User
 
 class Command(BaseCommand):
     help = 'Indexes images from S3 into AWS Rekognition collection.'
@@ -50,8 +50,6 @@ class Command(BaseCommand):
                         face_id = face_record['Face']['FaceId']
                         self.stdout.write(self.style.SUCCESS(f"Filename: {filename}, Face ID: {face_id}"))
 
-                        # Optionally, you can print or log the face_id for further processing
-                        
                         # Assuming the filename corresponds to the user's name)
                         username = filename.split('.')[0]  # Remove file extension
                         
@@ -59,8 +57,12 @@ class Command(BaseCommand):
                         try:
                             self.stdout.write(self.style.NOTICE(f"Searching for user {username} in dynamo..."))
                             user = User.get(username)
+
+                            current_user_type = user.user_type
                             user.face_id = face_id  # Assign the Rekognition face_id to the user
-                            user.save()  # Save the user object with the updated face_id
+                            user.user_type = current_user_type
+
+                            user.save() 
                             self.stdout.write(self.style.SUCCESS(f"Updated user {user.username} with face_id {face_id}"))
                         except User.DoesNotExist:
                             self.stdout.write(self.style.ERROR(f"User with name {username} not found"))
