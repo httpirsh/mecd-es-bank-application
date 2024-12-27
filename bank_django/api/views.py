@@ -1,10 +1,11 @@
-from .models import LoanSimulation, LoanDetails, User
+from .models import LoanSimulation, LoanDetails, User, LoanApplication
 from boto3.dynamodb.conditions import Attr
 from django.http import JsonResponse
-from django.shortcuts import render
 from django.conf import settings
 from django.views import View
+from rest_framework import viewsets
 from utils import generate_jwt_token, verify_jwt_token, decode_jwt_token, get_user_from_dynamodb, save_loan_application
+from .serializers import LoanApplicationSerializer
 import datetime
 import base64
 import os
@@ -235,3 +236,10 @@ class LoanApplicationView(View):
             return "interview"
         else:
             return "reject"
+        
+class LoanApplicationViewSet(viewsets.ModelViewSet):
+    # define queryset
+    queryset = LoanApplication.objects.all()
+ 
+    # specify serializer to be used
+    serializer_class = LoanApplicationSerializer
