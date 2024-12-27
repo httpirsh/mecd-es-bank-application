@@ -4,6 +4,7 @@ from django.http import JsonResponse
 import boto3
 import datetime
 import jwt
+import json
 
 def generate_jwt_token(user):
     """Generate JWT token for the user."""
@@ -82,3 +83,42 @@ def save_loan_application(user, monthly_income, monthly_expenses, amount, durati
 
     loan_application.save()  # Save the loan application to database
     return loan_application
+
+
+def start_workflow(execution_name, input_data, state_machine_arn):
+    """
+    Starts an execution of Step Functions.
+    """
+    stepfunctions_client = boto3.client('stepfunctions')
+
+    try:
+        response = stepfunctions_client.start_execution(
+            stateMachineArn=state_machine_arn,
+            name=execution_name,
+            input=json.dumps(input_data)
+        )
+        return response
+    except Exception as e:
+        print(f"Error starting workflow: {str(e)}")
+        return None
+
+
+def get_workflow_result(execution_arn):
+    """
+    Retrieves the result of a Step Functions execution.
+    """
+    stepfunctions_client = boto3.client('stepfunctions')
+
+    try:
+        response = stepfunctions_client.describe_execution(
+            executionArn=execution_arn
+        )
+        status = response.get("status")
+        if status == "SUCCEEDED":
+            output = json.loads(response.get("output", "{}"))
+            return {"status": "SUCCEEDED", "output": output}
+        else:
+            return {"status": status, "message": "Execution still in progress or failed."}
+    except Exception as e:
+        print(f"Error retrieving workflow result: {str(e)}")
+        return {"status": "error", "message": "Could not retrieve the result."}

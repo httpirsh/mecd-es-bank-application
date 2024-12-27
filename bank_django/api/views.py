@@ -6,13 +6,14 @@ from django.views import View
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
-from utils import generate_jwt_token, get_jwt_decoded, decode_jwt_token, get_user_from_dynamodb, save_loan_application
+from utils import generate_jwt_token, get_jwt_decoded, decode_jwt_token, get_user_from_dynamodb, save_loan_application, start_workflow, get_workflow_result
 from .serializers import LoanApplicationSerializer, LoanEvaluationSerializer
 import datetime
 import base64
 import os
 import boto3
 import json
+import time
 import logging
 
 logger = logging.getLogger('bank.api')
@@ -167,19 +168,60 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
         except Exception as e:
             raise ValidationError(detail=f"Wrong data in one of (monthly_income, monthly_expenses, amount, duration). Must be valid integers.")
 
-        # Calculate the credit score and classify the application
-        credit_score = self.calculate_credit_score(monthly_income, monthly_expenses, amount, duration)
-        application_status = self.classify_application(credit_score)
-        data['credit_score'] = credit_score
-        data['application_status'] = application_status
-        data['username'] = customer['username']
+            input_data = {
+                'monthly_income': monthly_income,
+                'monthly_expenses': monthly_expenses,
+                'amount': amount,
+                'duration': duration,
+            }
 
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+            workflow_result = self.workflow(input_data)
 
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            if workflow_result["status"] == "SUCCEEDED":
+                output = workflow_result["output"]
+                credit_score = output["body"]["Credit_Score"]
+                application_status = output["body"]["Loan_Status"]
+
+                # Save the loan application linked to the user
+                loan_application = save_loan_application(
+                    user=user,
+                    monthly_income=monthly_income,
+                    monthly_expenses=monthly_expenses,
+                    amount=amount,
+                    duration=duration,
+                    credit_score=credit_score,
+                    application_status=application_status
+                )
+
+
+                # Return a JsonResponse with the results
+                return JsonResponse({
+                    "credit_score": credit_score,
+                    "application_status": application_status,
+                    "loan_application_id": loan_application.id
+
+                })
+            else:
+                # Log more details for debugging
+                return JsonResponse({
+                    "status": workflow_result["status"],
+                    "message": workflow_result.get("message", "Error processing workflow."),
+                    "details": workflow_result.get("details", "Additional information not available.")
+                })
+            
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+            data['credit_score'] = credit_score
+            data['application_status'] = application_status
+            data['username'] = customer['username']
+
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def list(self, request, *args, **kwargs):
         self.auth_user_is(request, "officer") # TODO: customer should be able to list his own applications
@@ -189,33 +231,25 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
         self.auth_user_is(request, "officer") # TODO: customer should be able to retrieve his own applications
         return super().retrieve(request, *args, **kwargs)
 
-    # eliminarrrr -------------------
-    # substituir pelo workflow
-    def calculate_credit_score(self, monthly_income, monthly_expenses, amount, duration):
+    def workflow(self, input_data):
         """
-        Simplified formula for credit score calculation.
+        Starts the workflow and retrieves the results.
         """
-        score = 100
-        expense_ratio = (monthly_expenses / monthly_income) * 100
-        score -= expense_ratio
+        execution_name = f"execution_{datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+        state_machine_arn = "arn:aws:states:us-east-1:211125598817:stateMachine:Bank-Loan-Machine"
 
-        risk = amount / (monthly_income * duration) * 100
-        score -= risk
+        # Initialize the Workflow
+        response = start_workflow(execution_name, input_data, state_machine_arn)
 
-        return max(0, min(int(score), 100))
-
-    # substituir pelo workflow
-    def classify_application(self, credit_score):
-        """
-        Classify loan application based on the credit score.
-        """
-        if credit_score >= 70:
-            return "accept"
-        elif credit_score >= 40:
-            return "interview"
+        if response:
+            execution_arn = response.get("executionArn")
+            time.sleep(5) 
+            
+            result = get_workflow_result(execution_arn)
+            return result
         else:
-            return "reject"
-
+            return {"status": "erro", "message": "Could not start the workflow"}
+    
     def auth_user_is(self, request, user_type):
         """
         Retrieves the authenticated user from session and returns the user data if user_type matches.
