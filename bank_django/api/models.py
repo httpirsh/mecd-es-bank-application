@@ -86,7 +86,7 @@ class LoanApplication(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"LoanApplication(id={self.id}, user={self.username}, status={self.application_status})"    
+        return f"LoanApplication(id={self.id}, user={self.username}, amount={self.amount}, status={self.application_status})"    
 
 class LoanEvaluation(models.Model):
     application = models.OneToOneField(LoanApplication, on_delete=models.CASCADE, unique=True)
@@ -104,6 +104,9 @@ class LoanEvaluation(models.Model):
     officer = models.CharField("Officer evaluating the loan application", max_length=255)
     created = models.DateTimeField("When was the evaluation record created", auto_now_add=True)
     updated = models.DateTimeField("Last time the evaluation was updated", auto_now=True)
+
+    def __str__(self):
+        return f"LoanEvaluation(id={self.application}, officer={self.officer}, status={self.status})"
 
 # Initialize the DynamoDB client
 dynamodb = boto3.resource(

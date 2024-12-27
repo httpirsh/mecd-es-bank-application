@@ -1,9 +1,11 @@
 from datetime import datetime
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import LoanSimulation, LoanApplication, LoanDetails
+from .models import LoanApplication, LoanEvaluation
 
-admin.site.register(LoanSimulation)
+admin.site.register(LoanApplication)
+admin.site.register(LoanEvaluation)
+
 
 class LoanApplicationAdmin(admin.ModelAdmin):
     list_display = ('id', 'username', 'loan_amount', 'loan_duration', 'credit_score', 'application_status', 'interview_date', 'loan_officer')

@@ -32,10 +32,10 @@ class LoanSimulationView(View):
                 return JsonResponse({"error": "Invalid loan amount or duration"}, status=400)
 
             # Create a LoanSimulation object
-            loan_simulation = LoanSimulation.objects.create(amount=loan_amount, duration=loan_duration)
+            loan_simulation = LoanSimulation(amount=loan_amount, duration=loan_duration)
 
             # Calculate loan details
-            loan_details = LoanDetails.objects.create(loan_simulation=loan_simulation)
+            loan_details = LoanDetails(loan_simulation=loan_simulation)
             loan_details.calculate_details()
 
             # Prepare response data
