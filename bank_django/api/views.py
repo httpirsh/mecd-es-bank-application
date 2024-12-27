@@ -4,13 +4,14 @@ from django.http import JsonResponse
 from django.conf import settings
 from django.views import View
 from rest_framework import viewsets
-from utils import generate_jwt_token, verify_jwt_token, decode_jwt_token, get_user_from_dynamodb, save_loan_application
+from utils import generate_jwt_token, verify_jwt_token, decode_jwt_token, get_user_from_dynamodb, save_loan_application, start_workflow, get_workflow_result
 from .serializers import LoanApplicationSerializer
 import datetime
 import base64
 import os
 import boto3
 import json
+import time
 
 # Initialize Rekognition and DynamoDB clients
 rekognition_client = boto3.client('rekognition', region_name=os.environ.get("AWS_DEFAULT_REGION"))
@@ -181,61 +182,70 @@ class LoanApplicationView(View):
             # Extract data from the parsed JSON
             monthly_income = int(data.get("monthly_income"))
             monthly_expenses = int(data.get("monthly_expenses"))
-            amount = int(data.get("loan_amount"))
-            duration = int(data.get("loan_duration"))
+            loan_amount = int(data.get("loan_amount"))
+            loan_duration = int(data.get("loan_duration"))
 
-            # Calculate the credit score and classify the application
-            credit_score = self.calculate_credit_score(monthly_income, monthly_expenses, amount, duration)
-            application_status = self.classify_application(credit_score)
+            input_data = {
+                'monthly_income': monthly_income,
+                'monthly_expenses': monthly_expenses,
+                'loan_amount': loan_amount,
+                'loan_duration': loan_duration,
+            }
 
-            # Save the loan application linked to the user
-            loan_application = save_loan_application(
-                user=user,
-                monthly_income=monthly_income,
-                monthly_expenses=monthly_expenses,
-                amount=amount,
-                duration=duration,
-                credit_score=credit_score,
-                application_status=application_status
-            )
+            workflow_result = self.workflow(input_data)
 
-            # Return a JsonResponse with the results
-            return JsonResponse({
-                "credit_score": credit_score,
-                "application_status": application_status,
-                "loan_application_id": loan_application.id
-            })
+            if workflow_result["status"] == "SUCCEEDED":
+                output = workflow_result["output"]
+                credit_score = output["body"]["Credit_Score"]
+                loan_status = output["body"]["Loan_Status"]
+
+                # Save the loan application linked to the user
+                loan_application = save_loan_application(
+                    user=user,
+                    monthly_income=monthly_income,
+                    monthly_expenses=monthly_expenses,
+                    amount=loan_amount,
+                    duration=loan_duration,
+                    credit_score=credit_score,
+                    application_status=loan_status
+                )
+
+                # Return a JsonResponse with the results
+                return JsonResponse({
+                    "credit_score": credit_score,
+                    "application_status": loan_status,
+                    "loan_application_id": loan_application.id
+                })
+            else:
+                # Log more details for debugging
+                return JsonResponse({
+                    "status": workflow_result["status"],
+                    "message": workflow_result.get("message", "Error processing workflow."),
+                    "details": workflow_result.get("details", "Additional information not available.")
+                })
 
         except Exception as e:
-            # Return an error message if parsing fails
-            return JsonResponse({"error": str(e)}, status=400)
+            return JsonResponse({"error": str(e)}, status=500)
 
-    # eliminarrrr -------------------
-    # substituir pelo workflow
-    def calculate_credit_score(self, monthly_income, monthly_expenses, amount, duration):
-        """
-        Simplified formula for credit score calculation.
-        """
-        score = 100
-        expense_ratio = (monthly_expenses / monthly_income) * 100
-        score -= expense_ratio
 
-        risk = amount / (monthly_income * duration) * 100
-        score -= risk
-
-        return max(0, min(int(score), 100))
-
-    # substituir pelo workflow
-    def classify_application(self, credit_score):
+    def workflow(self, input_data):
         """
-        Classify loan application based on the credit score.
+        Starts the workflow and retrieves the results.
         """
-        if credit_score >= 70:
-            return "accept"
-        elif credit_score >= 40:
-            return "interview"
+        execution_name = f"execution_{datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+        state_machine_arn = "arn:aws:states:us-east-1:211125598817:stateMachine:Bank-Loan-Machine"
+
+        # Initialize the Workflow
+        response = start_workflow(execution_name, input_data, state_machine_arn)
+
+        if response:
+            execution_arn = response.get("executionArn")
+            time.sleep(5) 
+            
+            result = get_workflow_result(execution_arn)
+            return result
         else:
-            return "reject"
+            return {"status": "erro", "message": "Could not start the workflow"}
         
 class LoanApplicationViewSet(viewsets.ModelViewSet):
     # define queryset

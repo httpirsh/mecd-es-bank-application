@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
-// Function to get CSRF token from cookies
+// Function to get the CSRF token from cookies
 function getCSRFToken() {
   const cookies = document.cookie.split(';');
   for (const cookie of cookies) {
@@ -17,10 +16,10 @@ const LoanApplication = () => {
   const [loanConfiguration, setLoanConfiguration] = useState(null);
   const [monthlyIncome, setMonthlyIncome] = useState("");
   const [monthlyExpenses, setMonthlyExpenses] = useState("");
-  const [result, setResult] = useState(null);
+  const [creditScore, setCreditScore] = useState(null);
+  const [applicationStatus, setApplicationStatus] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // State to handle loading
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   // Load loan configuration from localStorage
   useEffect(() => {
@@ -34,13 +33,14 @@ const LoanApplication = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setResult(null);
-    setIsLoading(true);  // Start loading when form is submitted
+    setCreditScore(null);
+    setApplicationStatus("");
+    setIsLoading(true); // Show loading state
 
-    // Validate required fields
+    // Simple validation
     if (!monthlyIncome || !monthlyExpenses) {
-      setError("Please enter both monthly income and expenses.");
-      setIsLoading(false); // Stop loading
+      setError("Please fill in all required fields.");
+      setIsLoading(false); // Stop loading state
       return;
     }
 
@@ -49,7 +49,7 @@ const LoanApplication = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": getCSRFToken(),  // Include CSRF token
+          "X-CSRFToken": getCSRFToken(), // Include CSRF token
         },
         body: JSON.stringify({
           monthly_income: parseFloat(monthlyIncome),
@@ -60,27 +60,18 @@ const LoanApplication = () => {
       });
 
       if (!response.ok) {
-        // Check if response is not OK
-        const errorData = await response.text(); // Get response as text in case of error
+        const errorData = await response.text();
         throw new Error(errorData || "An unexpected error occurred.");
       }
 
-      // Parse the JSON response
+      // Process JSON response
       const data = await response.json();
-      setResult(data);
-
-      // Show the result based on the application status
-      if (data.application_status === "Accepted") {
-        alert("Loan application approved!");
-      } else if (data.application_status === "Interview") {
-        alert("Loan requires further review.");
-      } else if (data.application_status === "Rejected") {
-        alert("Loan application rejected.");
-      }
+      setCreditScore(data.credit_score);
+      setApplicationStatus(data.application_status);
     } catch (err) {
-      setError(err.message || "Error during loan application.");
+      setError(err.message || "Error during application submission.");
     } finally {
-      setIsLoading(false);  // Stop loading after the request is done
+      setIsLoading(false); // End loading state
     }
   };
 
@@ -114,16 +105,18 @@ const LoanApplication = () => {
                 required
               />
             </div>
-            <button type="submit" disabled={isLoading}>Submit Application</button>
+            <button type="submit" disabled={isLoading}>
+              Submit Application
+            </button>
           </form>
 
-          {isLoading && <p>Loading...</p>}  {/* Display loading state */}
+          {isLoading && <p>Loading...</p>} {/* Indicates loading state */}
           {error && <p style={{ color: "red" }}>{error}</p>}
-          {result && (
+          {creditScore !== null && (
             <div>
-              <h3>Application Status</h3>
-              <p>Credit Score: {result.credit_score}</p>
-              <p>Status: {result.application_status}</p>
+              <h3>Application Result</h3>
+              <p>Credit Score: {creditScore}</p>
+              <p>Status: {applicationStatus}</p>
             </div>
           )}
         </div>
