@@ -6,9 +6,12 @@ from botocore.exceptions import ClientError
 import boto3
 
 class LoanSimulation(models.Model):
-    amount = models.IntegerField("Amount (€)", default=1000) 
-    duration = models.IntegerField("Duration (months)", null=True, blank=True, default=12)
-    desired_monthly_payment = models.IntegerField("Desired monthly payment (€)", null=True, blank=True, default=100)
+    amount = models.IntegerField("Amount (€)") 
+    duration = models.IntegerField("Duration (months)", null=True, blank=True)
+    desired_monthly_payment = models.IntegerField("Desired monthly payment (€)", null=True, blank=True)
+
+    class Meta:
+        managed = False
 
     def clean(self):
         super().clean()
@@ -43,12 +46,15 @@ class LoanSimulation(models.Model):
         }
 
 class LoanDetails(models.Model):
-    loan_simulation = models.ForeignKey(LoanSimulation, on_delete=models.CASCADE, default=1)
-    interest_rate = models.FloatField("Interest rate (%)", default=5.0)
-    total_repayment = models.FloatField("Total repayment", default=0.0)
-    monthly_payment = models.IntegerField("Monthly payment (€)", default=0)
+    loan_simulation = models.ForeignKey(LoanSimulation, on_delete=models.CASCADE)
+    interest_rate = models.FloatField("Interest rate (%)")
+    total_repayment = models.FloatField("Total repayment (€)")
+    monthly_payment = models.IntegerField("Monthly payment (€)")
 
-    def calculate_and_save_details(self):
+    class Meta:
+        managed = False
+
+    def calculate_details(self):
         # Use the LoanSimulation instance to calculate the details
         loan_simulation = self.loan_simulation
         result = loan_simulation.calculate_loan_details(loan_simulation.amount, loan_simulation.duration)
@@ -56,35 +62,48 @@ class LoanDetails(models.Model):
         self.interest_rate = result["interest_rate"]
         self.total_repayment = result["total_repayment"]
         self.monthly_payment = result["monthly_installment"]
-        
-        self.save()
 
     def __str__(self):
-        return f"LoanDetails for {self.loan_simulation.amount}€"
+        return f"LoanDetails(id={self.loan_simulation.id})"
 
 class LoanApplication(models.Model):
-    username = models.CharField(max_length=255, default='default_username') # Store the username
-    monthly_income = models.IntegerField(default=0)
-    monthly_expenses = models.IntegerField(default=0)
-    loan_amount = models.IntegerField(default=0) 
-    loan_duration = models.IntegerField(default=12)
-    credit_score = models.IntegerField(default=0)
+    id = models.AutoField(primary_key=True)
+    username = models.CharField("User requesting the loan application (authenticated user)")
+    monthly_income = models.IntegerField("Monthly income (€)")
+    monthly_expenses = models.IntegerField("Monthly expenses (€)")
+    amount = models.IntegerField("Amount (€)") 
+    duration = models.IntegerField("Duration (months)", null=True, blank=True)
+    desired_monthly_payment = models.IntegerField("Desired monthly payment (€)", null=True, blank=True)
+    credit_score = models.IntegerField("Credit score (calculated by model)")
     application_status = models.CharField(
-        max_length=20,
+        max_length=9,
         choices=[
             ('accept', 'Accepted'),
             ('interview', 'Interview'),
             ('reject', 'Rejected')
-        ],
-        default='accept'
-
-    # Fields for interview date and loan officer/bank employer
-    #interview_date = models.DateTimeField(null=True, blank=True)
-    #loan_officer = models.CharField(max_length=255, null=True, blank=True)
-
+        ]
     )
+    created = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return f"Loan Application for {self.username}"    
+        return f"LoanApplication(id={self.id}, user={self.username}, status={self.application_status})"    
+
+class LoanEvaluation(models.Model):
+    application = models.OneToOneField(LoanApplication, on_delete=models.CASCADE, unique=True)
+    notes = models.CharField("Annotations", null=True, blank=True)
+    status = models.CharField(
+        max_length=11,
+        choices=[
+            ('accept', 'Accepted'),
+            ('interview', 'Interview'),
+            ('reject', 'Rejected'),
+            ('unevaluated', 'Not yet evaluated')
+        ],
+        default='unevaluated')
+
+    officer = models.CharField("Officer evaluating the loan application", max_length=255)
+    created = models.DateTimeField("When was the evaluation record created", auto_now_add=True)
+    updated = models.DateTimeField("Last time the evaluation was updated", auto_now=True)
 
 # Initialize the DynamoDB client
 dynamodb = boto3.resource(

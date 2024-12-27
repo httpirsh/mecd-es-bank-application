@@ -36,7 +36,7 @@ class LoanSimulationView(View):
 
             # Calculate loan details
             loan_details = LoanDetails.objects.create(loan_simulation=loan_simulation)
-            loan_details.calculate_and_save_details()
+            loan_details.calculate_details()
 
             # Prepare response data
             result = {
