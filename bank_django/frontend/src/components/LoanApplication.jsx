@@ -45,7 +45,7 @@ const LoanApplication = () => {
     }
 
     try {
-      const response = await fetch("/api/loan-application/", {
+      const response = await fetch("/api/applications/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,8 +54,8 @@ const LoanApplication = () => {
         body: JSON.stringify({
           monthly_income: parseFloat(monthlyIncome),
           monthly_expenses: parseFloat(monthlyExpenses),
-          loan_amount: loanConfiguration.loan_amount,
-          loan_duration: loanConfiguration.loan_duration,
+          amount: loanConfiguration.amount,
+          duration: loanConfiguration.duration,
         }),
       });
 
@@ -70,11 +70,11 @@ const LoanApplication = () => {
       setResult(data);
 
       // Show the result based on the application status
-      if (data.application_status === "Accepted") {
+      if (data.application_status === "accept") {
         alert("Loan application approved!");
-      } else if (data.application_status === "Interview") {
+      } else if (data.application_status === "interview") {
         alert("Loan requires further review.");
-      } else if (data.application_status === "Rejected") {
+      } else if (data.application_status === "reject") {
         alert("Loan application rejected.");
       }
     } catch (err) {
@@ -90,8 +90,8 @@ const LoanApplication = () => {
       {loanConfiguration ? (
         <div>
           <h2>Loan Details</h2>
-          <p>Loan Amount: €{loanConfiguration.loan_amount}</p>
-          <p>Loan Duration: {loanConfiguration.loan_duration} months</p>
+          <p>Loan Amount: {loanConfiguration.amount}€</p>
+          <p>Loan Duration: {loanConfiguration.duration} months</p>
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: "1rem" }}>

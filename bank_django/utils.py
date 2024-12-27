@@ -16,8 +16,9 @@ def generate_jwt_token(user):
     print(f"Generated JWT Token: {token}")
     return token
 
-def verify_jwt_token(request):
-    """Verify the JWT token from the Authorization header or cookies."""
+def get_jwt_decoded(request):
+    """Get and Decode the JWT token (from the Authorization header or cookie)."""
+   
     # Check for token in cookies
     token = request.COOKIES.get('jwt_token')
     
@@ -27,18 +28,12 @@ def verify_jwt_token(request):
         if authorization_header:
             # Extract token from the "Bearer <token>" format
             token = authorization_header.split(' ')[1] if authorization_header.startswith('Bearer ') else None
-
-    if not token:
-        return JsonResponse({"error": "Authorization token is required"}, status=401)
-
-    try:
-        # Decode the token using the secret key to get the user data
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
-        return payload  # Return the decoded payload (user data)
-    except jwt.ExpiredSignatureError:
-        return JsonResponse({"error": "Token has expired"}, status=401)
-    except jwt.InvalidTokenError:
-        return JsonResponse({"error": "Invalid token"}, status=401)
+        if not token:
+            raise Exception("Session not authenticated. JWT token not present.")
+    
+    # Decode the token using the secret key to get the user data
+    token_decoded = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
+    return token_decoded
     
 def decode_jwt_token(token):
     """
@@ -65,7 +60,8 @@ def get_user_from_dynamodb(username):
         response = table.get_item(Key={'username': username})
         if 'Item' in response:
             return response['Item']
-        return None
+        else:
+            return None
     except Exception as e:
         print(f"Error retrieving user from DynamoDB: {e}")
         return None

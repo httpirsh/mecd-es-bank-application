@@ -1,16 +1,21 @@
-from .models import LoanSimulation, LoanDetails, User, LoanApplication
+from .models import LoanSimulation, LoanDetails, User, LoanApplication, LoanEvaluation
 from boto3.dynamodb.conditions import Attr
 from django.http import JsonResponse
 from django.conf import settings
 from django.views import View
-from rest_framework import viewsets
-from utils import generate_jwt_token, verify_jwt_token, decode_jwt_token, get_user_from_dynamodb, save_loan_application
-from .serializers import LoanApplicationSerializer
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from utils import generate_jwt_token, get_jwt_decoded, decode_jwt_token, get_user_from_dynamodb, save_loan_application
+from .serializers import LoanApplicationSerializer, LoanEvaluationSerializer
 import datetime
 import base64
 import os
 import boto3
 import json
+import logging
+
+logger = logging.getLogger('bank.api')
 
 # Initialize Rekognition and DynamoDB clients
 rekognition_client = boto3.client('rekognition', region_name=os.environ.get("AWS_DEFAULT_REGION"))
@@ -143,72 +148,46 @@ class LoginView(View):
         except Exception as e:
             print(f"Error retrieving user from DynamoDB: {e}")
             return None
-
-class ProtectedResourceView(View):
-    def get(self, request, *args, **kwargs):
-        # Verify the JWT token
-        payload = verify_jwt_token(request)
         
-        # If the token is invalid, the function will return a JsonResponse with error
-        if isinstance(payload, JsonResponse):
-            return payload
+class LoanApplicationViewSet(viewsets.ModelViewSet):
+    queryset = LoanApplication.objects.all()
+    serializer_class = LoanApplicationSerializer
+    http_method_names = ['get', 'post', 'delete']
 
-        return JsonResponse({"message": "Protected resource accessed", "user": payload['username']})
+    def create(self, request, *args, **kwargs):
+        customer = self.auth_user_is(request, "customer")
 
-class LoanApplicationView(View):
-    def post(self, request):
+        # Extract data from the request
         try:
-            # Retrieve the JWT token from cookies
-            token = request.COOKIES.get('jwt_token')
-            if not token:
-                return JsonResponse({"error": "Token is missing"}, status=400)
-
-            # Decode the JWT token and extract the username
-            try:
-                user_data = decode_jwt_token(token)
-                username = user_data.get("username")
-            except Exception as e:
-                return JsonResponse({"error": str(e)}, status=401)
-
-            # Fetch the user from DynamoDB using the username
-            user = get_user_from_dynamodb(username)
-            if not user:
-                return JsonResponse({"error": "User not found"}, status=404)
-
-            # Parse the JSON data from the request body
-            data = json.loads(request.body.decode('utf-8'))
-
-            # Extract data from the parsed JSON
-            monthly_income = int(data.get("monthly_income"))
-            monthly_expenses = int(data.get("monthly_expenses"))
-            amount = int(data.get("loan_amount"))
-            duration = int(data.get("loan_duration"))
-
-            # Calculate the credit score and classify the application
-            credit_score = self.calculate_credit_score(monthly_income, monthly_expenses, amount, duration)
-            application_status = self.classify_application(credit_score)
-
-            # Save the loan application linked to the user
-            loan_application = save_loan_application(
-                user=user,
-                monthly_income=monthly_income,
-                monthly_expenses=monthly_expenses,
-                amount=amount,
-                duration=duration,
-                credit_score=credit_score,
-                application_status=application_status
-            )
-
-            # Return a JsonResponse with the results
-            return JsonResponse({
-                "credit_score": credit_score,
-                "application_status": application_status,
-                "loan_application_id": loan_application.id
-            })
-
+            data = request.data.copy()
+            monthly_income = int(data["monthly_income"])
+            monthly_expenses = int(data["monthly_expenses"])
+            amount = int(data["amount"])
+            duration = int(data["duration"])
         except Exception as e:
-            # Return an error message if parsing fails
-            return JsonResponse({"error": str(e)}, status=400)
+            raise ValidationError(detail=f"Wrong data in one of (monthly_income, monthly_expenses, amount, duration). Must be valid integers.")
+
+        # Calculate the credit score and classify the application
+        credit_score = self.calculate_credit_score(monthly_income, monthly_expenses, amount, duration)
+        application_status = self.classify_application(credit_score)
+        data['credit_score'] = credit_score
+        data['application_status'] = application_status
+        data['username'] = customer['username']
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def list(self, request, *args, **kwargs):
+        self.auth_user_is(request, "officer") # TODO: customer should be able to list his own applications
+        return super().list(request, *args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
+        self.auth_user_is(request, "officer") # TODO: customer should be able to retrieve his own applications
+        return super().retrieve(request, *args, **kwargs)
 
     # eliminarrrr -------------------
     # substituir pelo workflow
@@ -236,10 +215,25 @@ class LoanApplicationView(View):
             return "interview"
         else:
             return "reject"
-        
-class LoanApplicationViewSet(viewsets.ModelViewSet):
-    # define queryset
-    queryset = LoanApplication.objects.all()
- 
-    # specify serializer to be used
-    serializer_class = LoanApplicationSerializer
+
+    def auth_user_is(self, request, user_type):
+        """
+        Retrieves the authenticated user from session and returns the user data if user_type matches.
+        If session not authenticated or user is not of user_type, returns None.
+        """
+        try:
+            user_data = get_jwt_decoded(request)
+            username = user_data.get("username")
+
+            # Verify if user in session is a customer in our system
+            user = get_user_from_dynamodb(username)
+            if (user and user['user_type'] == user_type):
+                return user
+        except Exception as e:
+            logger.error(f"Error occurred retrieving authentication data: {e}", exc_info=True)
+    
+        raise AuthenticationFailed(detail=f"Session is not authenticated by one {user_type}.")
+
+class LoanEvaluationViewSet(viewsets.ModelViewSet):
+    queryset = LoanEvaluation.objects.all()
+    serializer_class = LoanEvaluationSerializer

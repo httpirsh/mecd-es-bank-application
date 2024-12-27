@@ -52,8 +52,8 @@ const LoanSimulator = () => {
 
       // Save loan configuration locally
       localStorage.setItem("loan_configuration", JSON.stringify({
-        loan_amount: loanAmount,
-        loan_duration: loanDuration,
+        amount: loanAmount,
+        duration: loanDuration,
       }));
     } catch (err) {
       setError(err.message || " when fetching /api/simulator/");

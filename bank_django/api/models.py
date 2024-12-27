@@ -69,7 +69,7 @@ class LoanDetails(models.Model):
 class LoanApplication(models.Model):
     id = models.AutoField(primary_key=True)
     username = models.CharField("User requesting the loan application (authenticated user)")
-    monthly_income = models.IntegerField("Monthly income (€)")
+    monthly_income = models.IntegerField("Monthly income (€)", blank=False, null=False)
     monthly_expenses = models.IntegerField("Monthly expenses (€)")
     amount = models.IntegerField("Amount (€)") 
     duration = models.IntegerField("Duration (months)", null=True, blank=True)
@@ -84,6 +84,14 @@ class LoanApplication(models.Model):
         ]
     )
     created = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        super().clean()
+        if self.duration and self.desired_monthly_payment:
+            raise ValidationError("You can only set 'duration' or 'desired_monthly_payment', not both.")
+        if not self.duration and not self.desired_monthly_payment:
+            raise ValidationError("You must set either 'duration' or 'desired_monthly_payment'.")
+
 
     def __str__(self):
         return f"LoanApplication(id={self.id}, user={self.username}, amount={self.amount}, status={self.application_status})"    
