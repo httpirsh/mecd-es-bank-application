@@ -70,7 +70,7 @@ def get_user_from_dynamodb(username):
         print(f"Error retrieving user from DynamoDB: {e}")
         return None
 
-def save_loan_application(user, monthly_income, monthly_expenses, loan_amount, loan_duration, credit_score, application_status):
+def save_loan_application(user, monthly_income, monthly_expenses, amount, duration, credit_score, application_status):
     """
     Saves the loan application linked to the user in database.
     """
@@ -78,8 +78,8 @@ def save_loan_application(user, monthly_income, monthly_expenses, loan_amount, l
         username=user['username'],  # Link the application to the user
         monthly_income=monthly_income,
         monthly_expenses=monthly_expenses,
-        loan_amount=loan_amount,
-        loan_duration=loan_duration,
+        amount=amount,
+        duration=duration,
         credit_score=credit_score,
         application_status=application_status
     )

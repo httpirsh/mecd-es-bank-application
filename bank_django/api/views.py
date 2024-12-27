@@ -180,11 +180,11 @@ class LoanApplicationView(View):
             # Extract data from the parsed JSON
             monthly_income = int(data.get("monthly_income"))
             monthly_expenses = int(data.get("monthly_expenses"))
-            loan_amount = int(data.get("loan_amount"))
-            loan_duration = int(data.get("loan_duration"))
+            amount = int(data.get("loan_amount"))
+            duration = int(data.get("loan_duration"))
 
             # Calculate the credit score and classify the application
-            credit_score = self.calculate_credit_score(monthly_income, monthly_expenses, loan_amount, loan_duration)
+            credit_score = self.calculate_credit_score(monthly_income, monthly_expenses, amount, duration)
             application_status = self.classify_application(credit_score)
 
             # Save the loan application linked to the user
@@ -192,8 +192,8 @@ class LoanApplicationView(View):
                 user=user,
                 monthly_income=monthly_income,
                 monthly_expenses=monthly_expenses,
-                loan_amount=loan_amount,
-                loan_duration=loan_duration,
+                amount=amount,
+                duration=duration,
                 credit_score=credit_score,
                 application_status=application_status
             )
@@ -211,7 +211,7 @@ class LoanApplicationView(View):
 
     # eliminarrrr -------------------
     # substituir pelo workflow
-    def calculate_credit_score(self, monthly_income, monthly_expenses, loan_amount, loan_duration):
+    def calculate_credit_score(self, monthly_income, monthly_expenses, amount, duration):
         """
         Simplified formula for credit score calculation.
         """
@@ -219,8 +219,8 @@ class LoanApplicationView(View):
         expense_ratio = (monthly_expenses / monthly_income) * 100
         score -= expense_ratio
 
-        loan_risk = loan_amount / (monthly_income * loan_duration) * 100
-        score -= loan_risk
+        risk = amount / (monthly_income * duration) * 100
+        score -= risk
 
         return max(0, min(int(score), 100))
 
@@ -230,8 +230,8 @@ class LoanApplicationView(View):
         Classify loan application based on the credit score.
         """
         if credit_score >= 70:
-            return "Accepted"
+            return "accept"
         elif credit_score >= 40:
-            return "Interview"
+            return "interview"
         else:
-            return "Rejected"
+            return "reject"
