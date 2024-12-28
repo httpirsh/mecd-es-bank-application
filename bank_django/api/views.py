@@ -165,8 +165,6 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
             monthly_expenses = int(data["monthly_expenses"])
             amount = int(data["amount"])
             duration = int(data["duration"])
-        except Exception as e:
-            raise ValidationError(detail=f"Wrong data in one of (monthly_income, monthly_expenses, amount, duration). Must be valid integers.")
 
             input_data = {
                 'monthly_income': monthly_income,
@@ -182,25 +180,19 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
                 credit_score = output["body"]["Credit_Score"]
                 application_status = output["body"]["Loan_Status"]
 
-                # Save the loan application linked to the user
-                loan_application = save_loan_application(
-                    user=user,
-                    monthly_income=monthly_income,
-                    monthly_expenses=monthly_expenses,
-                    amount=amount,
-                    duration=duration,
-                    credit_score=credit_score,
-                    application_status=application_status
-                )
+                # Add results to the data
+                data['credit_score'] = credit_score
+                data['application_status'] = application_status
+                data['username'] = customer['username']
 
+                # Serialize and create the object
+                serializer = self.get_serializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
 
-                # Return a JsonResponse with the results
-                return JsonResponse({
-                    "credit_score": credit_score,
-                    "application_status": application_status,
-                    "loan_application_id": loan_application.id
-
-                })
+                headers = self.get_success_headers(serializer.data)
+                return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        
             else:
                 # Log more details for debugging
                 return JsonResponse({
@@ -212,16 +204,6 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-            data['credit_score'] = credit_score
-            data['application_status'] = application_status
-            data['username'] = customer['username']
-
-            serializer = self.get_serializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
-
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def list(self, request, *args, **kwargs):
         self.auth_user_is(request, "officer") # TODO: customer should be able to list his own applications

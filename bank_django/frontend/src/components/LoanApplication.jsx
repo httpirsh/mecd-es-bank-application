@@ -66,7 +66,7 @@ const LoanApplication = () => {
 
       // Process JSON response
       const data = await response.json();
-      setResult(data);
+      //setResult(data);
 
       // Show the result based on the application status
       if (data.application_status === "accept") {

@@ -24,7 +24,7 @@ class Command(BaseCommand):
             username='helder',
             email='helder@bank.com',
             phone='0987654321',
-            user_type='employee',
+            user_type='officer',
         )
 
 def add_user_to_dynamodb(username, email, phone, user_type, face_id = None):
