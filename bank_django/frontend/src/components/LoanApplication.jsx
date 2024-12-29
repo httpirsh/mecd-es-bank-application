@@ -16,8 +16,7 @@ const LoanApplication = () => {
   const [loanConfiguration, setLoanConfiguration] = useState(null);
   const [monthlyIncome, setMonthlyIncome] = useState("");
   const [monthlyExpenses, setMonthlyExpenses] = useState("");
-  const [creditScore, setCreditScore] = useState(null);
-  const [applicationStatus, setApplicationStatus] = useState("");
+  const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,8 +32,7 @@ const LoanApplication = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setCreditScore(null);
-    setApplicationStatus("");
+    setResult(null);
     setIsLoading(true); // Show loading state
 
     // Simple validation
@@ -66,7 +64,7 @@ const LoanApplication = () => {
 
       // Process JSON response
       const data = await response.json();
-      //setResult(data);
+      setResult(data);
 
       // Show the result based on the application status
       if (data.application_status === "accept") {
@@ -120,11 +118,11 @@ const LoanApplication = () => {
 
           {isLoading && <p>Loading...</p>} {/* Indicates loading state */}
           {error && <p style={{ color: "red" }}>{error}</p>}
-          {creditScore !== null && (
+          {result !== null && (
             <div>
               <h3>Application Result</h3>
-              <p>Credit Score: {creditScore}</p>
-              <p>Status: {applicationStatus}</p>
+              <p>Credit Score: {result.credit_score}</p>
+              <p>Status: {result.application_status}</p>
             </div>
           )}
         </div>

@@ -169,8 +169,8 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
             input_data = {
                 'monthly_income': monthly_income,
                 'monthly_expenses': monthly_expenses,
-                'amount': amount,
-                'duration': duration,
+                'loan_amount': amount,
+                'loan_duration': duration,
             }
 
             workflow_result = self.workflow(input_data)
