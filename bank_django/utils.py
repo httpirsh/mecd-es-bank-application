@@ -1,6 +1,4 @@
-from api.models import LoanApplication
 from django.conf import settings
-from django.http import JsonResponse
 import boto3
 import datetime
 import jwt
@@ -49,7 +47,6 @@ def decode_jwt_token(token):
     except jwt.InvalidTokenError:
         raise Exception("Invalid token")
     
-
 def get_user_from_dynamodb(username):
     """
     Retrieves a user from DynamoDB based on username.
@@ -66,24 +63,6 @@ def get_user_from_dynamodb(username):
     except Exception as e:
         print(f"Error retrieving user from DynamoDB: {e}")
         return None
-
-def save_loan_application(user, monthly_income, monthly_expenses, amount, duration, credit_score, application_status):
-    """
-    Saves the loan application linked to the user in database.
-    """
-    loan_application = LoanApplication(
-        username=user['username'],  # Link the application to the user
-        monthly_income=monthly_income,
-        monthly_expenses=monthly_expenses,
-        amount=amount,
-        duration=duration,
-        credit_score=credit_score,
-        application_status=application_status
-    )
-
-    loan_application.save()  # Save the loan application to database
-    return loan_application
-
 
 def start_workflow(execution_name, input_data, state_machine_arn):
     """

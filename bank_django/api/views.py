@@ -5,8 +5,8 @@ from django.conf import settings
 from django.views import View
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
-from utils import generate_jwt_token, get_jwt_decoded, decode_jwt_token, get_user_from_dynamodb, save_loan_application, start_workflow, get_workflow_result
+from rest_framework.exceptions import AuthenticationFailed
+from utils import generate_jwt_token, get_jwt_decoded, decode_jwt_token, get_user_from_dynamodb, start_workflow, get_workflow_result
 from .serializers import LoanApplicationSerializer, LoanEvaluationSerializer
 import datetime
 import base64
