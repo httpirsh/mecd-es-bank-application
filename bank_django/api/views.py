@@ -204,7 +204,6 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-
     def list(self, request, *args, **kwargs):
         self.auth_user_is(request, "officer") # TODO: customer should be able to list his own applications
         return super().list(request, *args, **kwargs)
