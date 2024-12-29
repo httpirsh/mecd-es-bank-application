@@ -6,6 +6,7 @@ psycopg2>=2.9.7              # PostgreSQL adapter for Python
 
 # AWS SDK
 boto3>=1.28.0                # AWS SDK for Python
+awsebcli>=3.21.0             # AWS Elastic Beanstalk deployment
 
 # Environment configuration
 python-decouple>=3.8         # Simplifies environment variable management
