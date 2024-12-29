@@ -24,6 +24,7 @@ from django.conf import settings
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
+    path("office/", include("office.urls"))
 ]
 
 # This section is required to integrate vite processing.
