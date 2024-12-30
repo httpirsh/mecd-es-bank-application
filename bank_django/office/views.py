@@ -1,49 +1,67 @@
+import logging
+import boto3
+import bcrypt
+from django import forms
+from datetime import datetime
+from datetime import timedelta
+from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login as auth_login
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, FormView
-from django.contrib.auth.models import User
-from django.utils import timezone
-from django import forms
-from datetime import timedelta
 from api.models import LoanApplication, LoanEvaluation
 from django.contrib.auth.mixins import LoginRequiredMixin
-import boto3
-from django.conf import settings
-from datetime import datetime
+from bank_website.settings import AWS_REGION
+logger = logging.getLogger(__name__)
 
-# Página de boas-vindas (sem login necessário)
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
+table = dynamodb.Table('Users')
+
 def welcome_page(request):
     return render(request, 'welcomePage.html')
 
-# Função de login simulada
 def manager_login(request):
     if request.method == 'POST':
-        # Obter nome de usuário e senha do formulário
         username = request.POST['username']
-        password = request.POST['password']
-        
-        # Cria um usuário fictício ou recupera o existente
-        user, created = User.objects.get_or_create(username=username)
-        
-        # Simula a configuração da senha (não será verificada, apenas para fins de navegação)
-        if created:
-            user.set_password(password)  # Apenas configura a senha para garantir
-            user.save()
+        plain_pass = request.POST['password']
 
-        # Realiza o login fictício
-        auth_login(request, user)
+        # Fetch officer data from DynamoDB
+        try:
+            # Query DynamoDB to fetch the user
+            response = table.get_item(Key={'username': username})
+            if 'Item' not in response:
+                return render(request, 'login.html', {'error': 'User not found'})
 
-        # Redireciona para a página inicial (home)
-        return redirect('home')  # Substitua 'home' pelo nome correto da URL para a homePage
-        
+            user = response['Item']
+
+            # Check if the user is an officer
+            if user.get('user_type') != 'officer':
+                return render(request, 'login.html', {'error': 'Invalid user type'})
+
+            # Check if the password matches the stored hashed password using bcrypt
+            stored_password_hash = user.get('password')
+            if not stored_password_hash:
+                return render(request, 'login.html', {'error': 'Invalid credentials'})
+
+            if not bcrypt.checkpw(plain_pass.encode('utf-8'), stored_password_hash.encode('utf-8')):
+                return render(request, 'login.html', {'error': 'Invalid credentials'})
+
+            # If the credentials are correct, manually create a session for the officer
+            request.session['username'] = user['username']
+            request.session['user_type'] = user['user_type']
+            request.session['authenticated'] = True
+
+            return redirect('home')
+
+        except Exception as e:
+            logger.error(f"Error during login: {e}")
+            return render(request, 'login.html', {'error': 'Something went wrong during login.'})
+
     return render(request, 'login.html')
 
-# Página inicial após login
 @login_required
 def home_page(request):
     return render(request, 'homePage.html')
-
 
 class LoanRequestsListView(LoginRequiredMixin, ListView):
     model = LoanApplication
@@ -71,7 +89,6 @@ class LoanRequestsListView(LoginRequiredMixin, ListView):
         context['past_loans'] = past_loans
 
         return context
-
 
 class LoanEvaluationForm(forms.Form):
     STATUS_CHOICES = [
