@@ -1,0 +1,20 @@
+<!-- loanEvaluated.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loan Evaluated</title>
+</head>
+<body>
+    <h1>Evaluated Loans</h1>
+    {% for loan in evaluated_loans %}
+        <p>{{ loan.application.username }} - Status: {{ loan.status }}
+            {% if loan.status == 'interview' %}
+                <p>Interview at: {{ loan.timeslot }}</p>
+            {% endif %}
+        </p>
+    {% endfor %}
+    <a href="{% url 'loan_requests_list'%}"><button>Loan Requests List</button></a></p>
+    <a href="{% url 'home' %}"><button>Home</button></a></p>
+
+</body>
+</html>

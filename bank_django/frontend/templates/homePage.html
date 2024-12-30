@@ -1,0 +1,13 @@
+<!-- homePage.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home Page</title>
+</head>
+<body>
+    <h1>Welcome to the Home Page</h1>
+    <a href="{% url 'loan_requests_list' %}"><button>Loan Requests List</button></a>
+    <a href="{% url 'loan_evaluated' %}"><button>Loan Requests Evaluated</button></a>
+    <a href="{% url 'loan_waiting_interview' %}"><button>Pending Interviews</button></a>
+</body>
+</html>

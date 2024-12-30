@@ -1,0 +1,16 @@
+<!-- loanWaitingInterview.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loans Waiting Interview</title>
+</head>
+<body>
+    <h1>Loans Waiting for Interview</h1>
+    {% for loan in waiting_loans %}
+        <p>{{ loan.application.username }} - Interview at: {{ loan.timeslot }}</p>
+    {% endfor %}
+    <a href="{% url 'loan_requests_list'%}"><button>Loan Requests List</button></a></p>
+    <a href="{% url 'home' %}"><button>Home</button></a></p>
+
+</body>
+</html>

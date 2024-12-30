@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loan Requests List</title>
+</head>
+<body>
+    <h1>Current Loans</h1>
+    {% for loan in current_loans %}
+    <li>
+        <strong>ID:</strong> {{ loan.id }} <br>
+        <strong>Customer:</strong> {{ loan.username }} <br>
+        <strong>Creation Date:</strong> {{ loan.created }} <br>
+        <strong>Status:</strong> {{ loan.application_status }} <br>
+
+    </li>
+        <a href="{% url 'loan_evaluation' loan.id %}"><button>Evaluate</button></a></p>
+    {% empty %}
+        <p>No current loans available.</p>
+    {% endfor %}
+
+    <h1>Past Loans</h1>
+    {% for loan in past_loans %}
+    <li>
+        <strong>ID:</strong> {{ loan.id }} <br>
+        <strong>Customer:</strong> {{ loan.username }} <br>
+        <strong>Creation Date:</strong> {{ loan.created }} <br>
+        <strong>Status:</strong> {{ loan.application_status }} <br>
+
+    </li>
+        <a href="{% url 'loan_evaluation' loan.id %}"><button>Evaluate</button></a></p>
+    {% empty %}
+        
+        <p>No past loans available.</p>
+    {% endfor %}
+    <a href="{% url 'home' %}"><button>Home</button></a></p>
+
+</body>
+</html>
+
