@@ -105,20 +105,18 @@ class LoanEvaluation(models.Model):
             ('accept', 'Accepted'),
             ('interview', 'Interview'),
             ('reject', 'Rejected'),
-            ('unevaluated', 'Not yet evaluated')
-        ],
-        default='unevaluated')
+        ])
 
     officer = models.CharField("Officer evaluating the loan application", max_length=255)
     created = models.DateTimeField("When was the evaluation record created", auto_now_add=True)
     updated = models.DateTimeField("Last time the evaluation was updated", auto_now=True)
     
     # Novo campo para armazenar o timeslot da entrevista
-    timeslot = models.DateTimeField("Interview Timeslot", null=True, blank=True)
+    timeslots = models.TextField(blank=True, null=True)  # Usando TextField para armazenar múltiplos timeslots
 
 
     def __str__(self):
-        return f"LoanEvaluation(id={self.application}, officer={self.officer}, status={self.status})"
+        return f"LoanEvaluation(id={self.application}, officer={self.officer}, status={self.status}, timeslots={self.timeslots})"
 
 # Initialize the DynamoDB client
 dynamodb = boto3.resource(

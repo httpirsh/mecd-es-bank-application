@@ -1,16 +1,60 @@
-<!-- loanWaitingInterview.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Loans Waiting Interview</title>
+    <title>Loan Waiting for Interview</title>
 </head>
 <body>
     <h1>Loans Waiting for Interview</h1>
-    {% for loan in waiting_loans %}
-        <p>{{ loan.application.username }} - Interview at: {{ loan.timeslot }}</p>
-    {% endfor %}
-    <a href="{% url 'loan_requests_list'%}"><button>Loan Requests List</button></a></p>
-    <a href="{% url 'home' %}"><button>Home</button></a></p>
 
+    {% if loan_waiting_interview %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Timeslots</th>
+                    <th>Actions</th> <!-- Nova coluna para ações -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan in loan_waiting_interview %}
+                <tr>
+                    <td>{{ loan.application.id }}</td>
+                    <td>{{ loan.application.username }}</td>
+                    <td>{{ loan.status }}</td>
+                    <td>
+                        {% if loan.timeslot_list %}
+                            {% for timeslot in loan.timeslot_list %}
+                                <div>{{ timeslot|date:"D, M j, Y, H:i" }}</div>
+                            {% endfor %}
+                        {% else %}
+                            No timeslot selected
+                        {% endif %}
+                    </td>
+                    <td>
+                        <!-- Formulários para alterar o status -->
+                        <form method="post" action="{% url 'loan_waiting_interview' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                            <button type="submit" name="action" value="accept">Accept</button>
+                        </form>
+                        <form method="post" action="{% url 'loan_waiting_interview' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="loan_id" value="{{ loan.id }}">
+                            <button type="submit" name="action" value="reject">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No loans waiting for interview.</p>
+    {% endif %}
+
+    <br>
+    <a href="{% url 'loan_requests_list' %}"><button>Loan Requests List</button></a>
+    <a href="{% url 'home' %}"><button>Home</button></a>
 </body>
 </html>

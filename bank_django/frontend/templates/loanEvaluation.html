@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Loan Evaluated</title>
+    <title>Loan Evaluation</title>
 </head>
 <body>
   <h1>Evaluate Loan Application</h1>
@@ -19,29 +19,25 @@
     <h2>Evaluation Form</h2>
     <form method="post">
         {% csrf_token %}
-        
+
         <!-- Status Dropdown -->
         <label for="status">Status:</label>
         <select name="status" id="status" onchange="toggleTimeslotField(this.value)">
             <option value="accept" {% if evaluation.status == "accept" %}selected{% endif %}>Accepted</option>
             <option value="interview" {% if evaluation.status == "interview" %}selected{% endif %}>Interview</option>
             <option value="reject" {% if evaluation.status == "reject" %}selected{% endif %}>Rejected</option>
-            <option value="unevaluated" {% if evaluation.status == "unevaluated" %}selected{% endif %}>Not yet evaluated</option>
         </select>
         <br><br>
 
-        <!-- Timeslot Selection -->
+        <!-- Timeslot Display (Only for 'interview') -->
         <div id="timeslot-field" style="display: none;">
-          <label for="timeslot">Select Timeslot:</label>
-          <select name="timeslot" id="timeslot">
-              <option value="">-- Select a Timeslot --</option>
-              {% for timeslot in available_timeslots %}
-                  <option value="{{ timeslot|date:'Y-m-d H:i:s' }}" 
-                          {% if evaluation.timeslot == timeslot %}selected{% endif %}>
-                      {{ timeslot|date:'D, M j, Y, H:i' }}
-                  </option>
-              {% endfor %}
-          </select>
+          <h3>Available Timeslots</h3>
+          {% for timeslot in available_timeslots %}
+            <div>
+              <input type="checkbox" name="timeslots" value="{{ timeslot.formatted }}">
+              <label>{{ timeslot.display }}</label>
+            </div>
+          {% endfor %}
         </div>
         <br><br>
 
@@ -54,7 +50,8 @@
     </form>
 
     <!-- Link to return to applications list -->
-    <button href="{% url 'loan_requests_list' %}">Loan Requests List</button></p>
+    <a href="{% url 'loan_requests_list' %}"><button>Loan Requests List</button></a>
+    <a href="{% url 'home' %}"><button>Home</button></a>
 
     <!-- JavaScript to toggle timeslot visibility -->
     <script>
@@ -72,5 +69,6 @@
             toggleTimeslotField(document.getElementById('status').value);
         });
     </script>
+
 </body>
 </html>
