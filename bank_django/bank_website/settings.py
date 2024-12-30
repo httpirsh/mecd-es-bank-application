@@ -131,8 +131,10 @@ ASSETS_URL = '/assets/'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
-STATIC_ROOT = "frontend/dist/assets"
-STATIC_URL = "/assets/"
+#STATIC_ROOT = "frontend/dist/assets"
+#STATIC_URL = "/assets/"
+STATIC_ROOT = "static"
+STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [
 ]

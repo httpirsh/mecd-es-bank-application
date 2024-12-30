@@ -6,12 +6,14 @@
 </head>
 <body>
     <h1>Evaluated Loans</h1>
-    {% for loan in evaluated_loans %}
-        <p>{{ loan.application.username }} - Status: {{ loan.status }}
-            {% if loan.status == 'interview' %}
-                <p>Interview at: {{ loan.timeslot }}</p>
-            {% endif %}
-        </p>
+    {% for loan in loan_evaluated %}
+        <li>
+            <strong>ID:</strong> {{ loan.id }} <br>
+            <strong>Customer:</strong> {{ loan.application.username }} <br>
+            <strong>Creation Date:</strong> {{ loan.created }} <br>
+            <strong>Status:</strong> {{ loan.status }} <br>
+            <strong>-------------------------------------------------------</strong>
+        </li>
     {% endfor %}
     <a href="{% url 'loan_requests_list'%}"><button>Loan Requests List</button></a></p>
     <a href="{% url 'home' %}"><button>Home</button></a></p>

@@ -8,6 +8,9 @@ from django import forms
 from datetime import timedelta
 from api.models import LoanApplication, LoanEvaluation
 from django.contrib.auth.mixins import LoginRequiredMixin
+import boto3
+from django.conf import settings
+from datetime import datetime
 
 # Página de boas-vindas (sem login necessário)
 def welcome_page(request):
@@ -41,8 +44,6 @@ def manager_login(request):
 def home_page(request):
     return render(request, 'homePage.html')
 
-from django.utils import timezone
-from datetime import timedelta
 
 class LoanRequestsListView(LoginRequiredMixin, ListView):
     model = LoanApplication
@@ -79,7 +80,7 @@ class LoanEvaluationForm(forms.Form):
         ('interview', 'Interview'),
     ]
     status = forms.ChoiceField(choices=STATUS_CHOICES)
-    timeslot = forms.DateTimeField(required=False, widget=forms.SelectDateWidget)  # Timeslot só se for 'interview'
+    timeslots = forms.CharField(required=False, widget=forms.HiddenInput)  # Vamos armazenar os timeslots selecionados aqui
 
 class LoanEvaluationView(LoginRequiredMixin, DetailView, FormView):
     model = LoanApplication
@@ -92,49 +93,132 @@ class LoanEvaluationView(LoginRequiredMixin, DetailView, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Gerar 5 timeslots de exemplo
         timeslots = self._get_available_timeslots()
         context['available_timeslots'] = timeslots
-
         return context
 
     def form_valid(self, form):
         loan = self.get_object()
         status = form.cleaned_data['status']
-        timeslot = form.cleaned_data.get('timeslot')
+        timeslot_values = self.request.POST.getlist('timeslots')  # Obtém os timeslots selecionados
 
         # Criar ou obter a avaliação associada ao empréstimo
         evaluation, created = LoanEvaluation.objects.get_or_create(application=loan, officer=self.request.user.username)
         evaluation.status = status
-        
-        # Se o status for 'interview', associamos um timeslot
-        if status == 'interview' and timeslot:
-            evaluation.timeslot = timeslot
 
+        # Se o status for 'interview', associamos os timeslots selecionados
+        if status == 'interview' and timeslot_values:
+            evaluation.timeslots = '/ '.join(timeslot_values)  # Guarda os timeslots como uma string separada por vírgulas
         evaluation.save()
+
 
         # Se o status for 'interview', redireciona para a página de empréstimos aguardando entrevista
         if status == 'interview':
             return redirect('loan_waiting_interview')
-        return redirect('loan_evaluated')
+        else: 
+            self.send_sns_notification(loan)
+            return redirect('loan_evaluated')
+
+    def send_sns_notification(self, loan):
+        sns = boto3.client('sns')
+        # ARN do tópico SNS
+        topic_arn = 'arn:aws:sns:us-east-1:211125598817:Notification'
+
+        # Corpo da mensagem
+        message = f"Olá {loan.username}, sua solicitação de empréstimo foi avaliada com o status: {loan.application_status}."
+
+        # Enviar a mensagem SNS
+        response = sns.publish(
+            TopicArn=topic_arn,
+            Message=message,
+            Subject="Avaliação de Empréstimo Concluída"
+        )
 
     def _get_available_timeslots(self):
         # Simula slots de tempo disponíveis para entrevistas
         now = timezone.now()
-        return [now + timedelta(hours=i) for i in range(1, 6)]
+        timeslots = [now + timedelta(hours=i) for i in range(1, 6)]
+        return [{"formatted": slot.strftime('%Y-%m-%d %H:%M:%S'), "display": slot.strftime('%a, %b %d, %Y %H:%M')} for slot in timeslots]
 
 class LoanEvaluatedView(LoginRequiredMixin, ListView):
     model = LoanEvaluation
     template_name = 'loanEvaluated.html'
-    context_object_name = 'evaluated_loans'
+    context_object_name = 'loan_evaluated'
 
     def get_queryset(self):
-        return LoanEvaluation.objects.filter()
+        return  LoanEvaluation.objects.exclude(status='interview')
+
+        
 
 class LoanWaitingInterviewView(LoginRequiredMixin, ListView):
     model = LoanEvaluation
     template_name = 'loanWaitingInterview.html'
-    context_object_name = 'waiting_loans'
+    context_object_name = 'loan_waiting_interview'
 
     def get_queryset(self):
         return LoanEvaluation.objects.filter(status='interview')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        for loan in context['loan_waiting_interview']:
+            if loan.timeslots:
+                # Divide os timeslots em uma lista de strings
+                timeslot_str_list = loan.timeslots.split("/ ")
+                
+                # Converte as strings para objetos datetime
+                loan.timeslot_list = [
+                    datetime.strptime(timeslot_str, "%Y-%m-%d %H:%M:%S") 
+                    for timeslot_str in timeslot_str_list
+                ]
+            else:
+                loan.timeslot_list = []
+
+        return context 
+        
+
+    def post(self, request, *args, **kwargs):
+        # Verifique se o usuário tem permissão para alterar o status
+        if not request.user.is_authenticated:
+            return ValueError("You are not allowed to do this.")
+        
+        loan_id = request.POST.get('loan_id')
+        action = request.POST.get('action')
+
+        if not loan_id or action not in ['accept', 'reject']:
+            return ValueError("Invalid action.")
+
+        # Obtenha o empréstimo com base no ID
+        loan_evaluation = get_object_or_404(LoanEvaluation, pk=loan_id)
+
+        # Verifique se o empréstimo está no status 'interview'
+        if loan_evaluation.status != 'interview':
+            return ValueError("Loan is not in interview status.")
+
+        # Atualize o status de acordo com o botão pressionado
+        loan_evaluation.status = action
+        loan_evaluation.save()
+        self.send_sns_notification_eval(loan_evaluation)
+        
+        # Redirecione de volta para a página de empréstimos aguardando entrevista
+        return redirect('loan_waiting_interview')  # Certifique-se de que a URL esteja correta
+    
+    def send_sns_notification_eval(self, loan_evaluation):
+        sns = boto3.client('sns')
+        # ARN do tópico SNS
+        topic_arn = 'arn:aws:sns:us-east-1:211125598817:Notification'
+
+        # Obtendo informações necessárias do empréstimo
+        loan = loan_evaluation.application
+        message = f"Olá {loan.username}, sua solicitação de empréstimo foi avaliada com o status: {loan_evaluation.status}."
+
+        # Enviar a mensagem SNS
+        sns.publish(
+            TopicArn=topic_arn,
+            Message=message,
+            Subject="Avaliação de Empréstimo Concluída"
+        )
+        
+
+  
+    
