@@ -31,3 +31,6 @@ djangorestframework>=3.14.0  # Web API toolkit for Django
 
 # Simple JWT for authentication
 djangorestframework-simplejwt>=5.0.0  # JWT authentication for Django REST Framework
+
+# bcrypt for password hashing
+bcrypt>=4.0.1  # bcrypt password hashing library
