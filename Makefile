@@ -1,3 +1,6 @@
+# Configuration
+EB_ENV = bank-website-env
+
 # Default target with instructions
 default:
 	@echo "Available targets:"
@@ -14,6 +17,9 @@ frontend: bank_django/frontend/dist/.build
 # Start Django development server
 django_start: frontend
 	cd bank_django && python manage.py runserver
+
+deploy: frontend
+	cd bank_django && python manage.py collectstatic --noinput && eb use $(EB_ENV) && eb deploy
 
 # Clean temporary and build files
 clean:

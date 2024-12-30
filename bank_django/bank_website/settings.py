@@ -15,7 +15,7 @@ SECRET_KEY = "django-insecure-j2py8&onvksq*e8(^xb*x+)gsb5qkla#og)6@oxg)77)%7s=66
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*", "bank-django-env01.eba-f45dtvbc.us-east-1.elasticbeanstalk.com"]
+ALLOWED_HOSTS = ["bank-website-env.eba-ganzz9ai.us-east-1.elasticbeanstalk.com", "172.31.40.236", "*"]
 
 # Application definition
 
@@ -67,8 +67,7 @@ TEMPLATES = [
     },
 ]
 
-ASSETS_ROOT = os.path.join(BASE_DIR, 'frontend', 'dist', 'assets')
-ASSETS_URL = '/assets/'
+
 
 WSGI_APPLICATION = "bank_website.wsgi.application"
 
@@ -125,13 +124,16 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Static files for Vite (CSS, JavaScript, Images)
+ASSETS_ROOT = os.path.join(BASE_DIR, 'frontend', 'dist', 'assets')
+ASSETS_URL = '/assets/'
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
-
-STATIC_URL = "assets/"
+STATIC_ROOT = "frontend/dist/assets"
+STATIC_URL = "/assets/"
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'frontend', 'dist', 'assets'),
 ]
 
 # Default primary key field type

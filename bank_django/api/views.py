@@ -15,12 +15,13 @@ import boto3
 import json
 import time
 import logging
+from bank_website.settings import AWS_REGION
 
 logger = logging.getLogger('bank.api')
 
 # Initialize Rekognition and DynamoDB clients
-rekognition_client = boto3.client('rekognition', region_name=os.environ.get("AWS_DEFAULT_REGION"))
-dynamodb = boto3.resource('dynamodb', region_name=settings.AWS_REGION)
+rekognition_client = boto3.client('rekognition', region_name=AWS_REGION)
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 print(f"DynamoDB client initialized: {dynamodb}")
 table = dynamodb.Table('Users')
 
@@ -79,7 +80,7 @@ class LoginView(View):
 
         try:
             # Search for the face in Rekognition's collection
-            rekognition_client = boto3.client('rekognition', region_name=os.environ.get('AWS_DEFAULT_REGION'))
+            rekognition_client = boto3.client('rekognition', region_name=AWS_REGION)
             response = rekognition_client.search_faces_by_image(
                 CollectionId=os.environ.get('AWS_COLLECTION_NAME'),
                 Image={'Bytes': image_bytes},
