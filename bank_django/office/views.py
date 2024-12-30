@@ -5,12 +5,9 @@ from django import forms
 from datetime import datetime
 from datetime import timedelta
 from django.utils import timezone
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login as auth_login
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, FormView
 from api.models import LoanApplication, LoanEvaluation
-from django.contrib.auth.mixins import LoginRequiredMixin
 from bank_website.settings import AWS_REGION
 logger = logging.getLogger(__name__)
 
@@ -59,11 +56,10 @@ def manager_login(request):
 
     return render(request, 'login.html')
 
-@login_required
 def home_page(request):
     return render(request, 'homePage.html')
 
-class LoanRequestsListView(LoginRequiredMixin, ListView):
+class LoanRequestsListView(ListView):
     model = LoanApplication
     template_name = 'loanRequestsList.html'
     context_object_name = 'loans'
@@ -99,7 +95,7 @@ class LoanEvaluationForm(forms.Form):
     status = forms.ChoiceField(choices=STATUS_CHOICES)
     timeslots = forms.CharField(required=False, widget=forms.HiddenInput)  # Vamos armazenar os timeslots selecionados aqui
 
-class LoanEvaluationView(LoginRequiredMixin, DetailView, FormView):
+class LoanEvaluationView(DetailView, FormView):
     model = LoanApplication
     template_name = 'loanEvaluation.html'
     context_object_name = 'loan'
@@ -157,7 +153,7 @@ class LoanEvaluationView(LoginRequiredMixin, DetailView, FormView):
         timeslots = [now + timedelta(hours=i) for i in range(1, 6)]
         return [{"formatted": slot.strftime('%Y-%m-%d %H:%M:%S'), "display": slot.strftime('%a, %b %d, %Y %H:%M')} for slot in timeslots]
 
-class LoanEvaluatedView(LoginRequiredMixin, ListView):
+class LoanEvaluatedView(ListView):
     model = LoanEvaluation
     template_name = 'loanEvaluated.html'
     context_object_name = 'loan_evaluated'
@@ -165,9 +161,7 @@ class LoanEvaluatedView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return  LoanEvaluation.objects.exclude(status='interview')
 
-        
-
-class LoanWaitingInterviewView(LoginRequiredMixin, ListView):
+class LoanWaitingInterviewView(ListView):
     model = LoanEvaluation
     template_name = 'loanWaitingInterview.html'
     context_object_name = 'loan_waiting_interview'
@@ -193,7 +187,6 @@ class LoanWaitingInterviewView(LoginRequiredMixin, ListView):
 
         return context 
         
-
     def post(self, request, *args, **kwargs):
         # Verifique se o usuário tem permissão para alterar o status
         if not request.user.is_authenticated:
@@ -235,7 +228,3 @@ class LoanWaitingInterviewView(LoginRequiredMixin, ListView):
             Message=message,
             Subject="Avaliação de Empréstimo Concluída"
         )
-        
-
-  
-    
