@@ -15,7 +15,7 @@ import boto3
 import json
 import time
 import logging
-from bank_website.settings import AWS_REGION
+from bank_website.settings import AWS_REGION, AWS_COLLECTION_NAME
 
 logger = logging.getLogger('bank.api')
 
@@ -82,7 +82,7 @@ class LoginView(View):
             # Search for the face in Rekognition's collection
             rekognition_client = boto3.client('rekognition', region_name=AWS_REGION)
             response = rekognition_client.search_faces_by_image(
-                CollectionId=os.environ.get('AWS_COLLECTION_NAME'),
+                CollectionId=AWS_COLLECTION_NAME,
                 Image={'Bytes': image_bytes},
                 MaxFaces=1,
                 FaceMatchThreshold=70
