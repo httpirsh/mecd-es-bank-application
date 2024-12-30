@@ -5,8 +5,7 @@ from django.conf import settings
 from django.views import View
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.exceptions import AuthenticationFailed
-from utils import generate_jwt_token, get_jwt_decoded, get_user_from_dynamodb, start_workflow, get_workflow_result
+from utils import generate_jwt_token, auth_user_is, start_workflow, get_workflow_result
 from .serializers import LoanApplicationSerializer, LoanEvaluationSerializer
 import datetime
 import base64
@@ -16,7 +15,7 @@ import time
 import logging
 from bank_website.settings import AWS_REGION, AWS_COLLECTION_NAME
 
-logger = logging.getLogger('bank.api')
+logger = logging.getLogger(__name__)
 
 # Initialize Rekognition and DynamoDB clients
 rekognition_client = boto3.client('rekognition', region_name=AWS_REGION)
@@ -89,11 +88,11 @@ class LoginView(View):
 
             if 'FaceMatches' in response and response['FaceMatches']:
                 face_id = response['FaceMatches'][0]['Face']['FaceId']
-                print(f"Rekognition Face ID: {face_id}")
+                logger.info(f"Rekognition Face ID: {face_id}")
 
                 user = self.get_user_by_face_id(face_id)
                 if user:
-                    print(f"Found user: {user.username}")
+                    logger.info(f"Found user: {user.username}")
                     # Generate JWT Token
                     token = generate_jwt_token(user)
 
@@ -156,7 +155,7 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'delete']
 
     def create(self, request, *args, **kwargs):
-        customer = self.auth_user_is(request, "customer")
+        customer = auth_user_is(request, ["customer"])
 
         # Extract data from the request
         try:
@@ -214,7 +213,7 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
-        user_role = self.auth_user_is(request, ["officer", "customer"])  # Permitir tanto 'officer' quanto 'customer'
+        user_role = auth_user_is(request, ["officer", "customer"])
 
         instance = self.get_object()
         if user_role == "customer" and instance.customer != request.user:
@@ -222,6 +221,7 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
             return Response({"error": "You are not authorized to access this application."}, status=403)
 
         return super().retrieve(request, *args, **kwargs)
+    
     def workflow(self, input_data):
         """
         Starts the workflow and retrieves the results.
@@ -241,24 +241,6 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
         else:
             return {"status": "erro", "message": "Could not start the workflow"}
     
-    def auth_user_is(self, request, user_type):
-        """
-        Retrieves the authenticated user from session and returns the user data if user_type matches.
-        If session not authenticated or user is not of user_type, returns None.
-        """
-        try:
-            user_data = get_jwt_decoded(request)
-            username = user_data.get("username")
-
-            # Verify if user in session is a customer in our system
-            user = get_user_from_dynamodb(username)
-            if (user and user['user_type'] == user_type):
-                return user
-        except Exception as e:
-            logger.error(f"Error occurred retrieving authentication data: {e}", exc_info=True)
-    
-        raise AuthenticationFailed(detail=f"Session is not authenticated by one {user_type}.")
-
 class LoanEvaluationViewSet(viewsets.ModelViewSet):
     queryset = LoanEvaluation.objects.all()
     serializer_class = LoanEvaluationSerializer

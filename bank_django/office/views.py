@@ -7,8 +7,9 @@ from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, FormView
-from api.models import LoanApplication, LoanEvaluation
+from api.models import LoanApplication, LoanEvaluation, User
 from bank_website.settings import AWS_REGION
+from utils import auth_user_is, generate_jwt_token
 logger = logging.getLogger(__name__)
 
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
@@ -48,7 +49,23 @@ def manager_login(request):
             request.session['user_type'] = user['user_type']
             request.session['authenticated'] = True
 
-            return redirect('home')
+            auth_user = User(
+                    username=user['username'],
+                    email=user['email'],
+            )
+
+            # Set the token in an HTTP-only cookie and return to home
+            token = generate_jwt_token(auth_user)
+            response = redirect('home')
+            response.set_cookie(
+                'jwt_token',
+                token,
+                max_age=datetime.timedelta(days=1),
+                httponly=True, # Cannot be accessed via JavaScript
+                secure=True, # Use only over HTTPS
+                samesite='Strict' # Protects against CSRF attacks
+            )
+            return response
 
         except Exception as e:
             logger.error(f"Error during login: {e}")
@@ -63,6 +80,12 @@ class LoanRequestsListView(ListView):
     model = LoanApplication
     template_name = 'loanRequestsList.html'
     context_object_name = 'loans'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.user = auth_user_is(request, ["officer"]) # Only allowed for officers
+
+        # Call the parent dispatch method to proceed
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

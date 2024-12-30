@@ -1,15 +1,19 @@
 from django.conf import settings
+from rest_framework.exceptions import AuthenticationFailed
 import boto3
-import datetime
+from datetime import datetime, timedelta, timezone
 import jwt
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 def generate_jwt_token(user):
     """Generate JWT token for the user."""
     payload = {
         'username': user.username,
         'email': user.email,
-        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)  # Use timezone-aware datetime
+        'exp': datetime.now(timezone.utc) + timedelta(days=1)  # Use timezone-aware datetime
     }
     token = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm='HS256')
     print(f"Generated JWT Token: {token}")
@@ -63,6 +67,24 @@ def get_user_from_dynamodb(username):
     except Exception as e:
         print(f"Error retrieving user from DynamoDB: {e}")
         return None
+    
+def auth_user_is(request, user_type):
+    """
+    Retrieves the authenticated user from session and returns the user data if user_type matches.
+    If session not authenticated or user is not of user_type, returns None.
+    """
+    try:
+        user_data = get_jwt_decoded(request)
+        username = user_data.get("username")
+
+        # Verify if user in session is a customer in our system
+        user = get_user_from_dynamodb(username)
+        if (user and user['user_type'] in user_type):
+            return user
+    except Exception as e:
+        logger.error(f"Error occurred retrieving authentication data: {e}", exc_info=True)
+
+    raise AuthenticationFailed(detail=f"Session is not authenticated with a user profile in {user_type}.")
 
 def start_workflow(execution_name, input_data, state_machine_arn):
     """
@@ -101,3 +123,5 @@ def get_workflow_result(execution_arn):
     except Exception as e:
         print(f"Error retrieving workflow result: {str(e)}")
         return {"status": "error", "message": "Could not retrieve the result."}
+    
+
