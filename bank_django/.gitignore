@@ -1,9 +1,4 @@
-__pycache__
-*.sqlite3
-nodesource_setup.sh
-package-lock.json
-node_modules
-bank_django/frontend/dist
+
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml

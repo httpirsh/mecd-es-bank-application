@@ -15,7 +15,7 @@ SECRET_KEY = "django-insecure-j2py8&onvksq*e8(^xb*x+)gsb5qkla#og)6@oxg)77)%7s=66
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*", "bank-django-env01.eba-f45dtvbc.us-east-1.elasticbeanstalk.com"]
 
 # Application definition
 
@@ -70,7 +70,7 @@ TEMPLATES = [
 ASSETS_ROOT = os.path.join(BASE_DIR, 'frontend', 'dist', 'assets')
 ASSETS_URL = '/assets/'
 
-ASGI_APPLICATION = "bank_website.asgi.application"
+WSGI_APPLICATION = "bank_website.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -128,7 +128,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "assets/"
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'frontend', 'dist', 'assets'),
