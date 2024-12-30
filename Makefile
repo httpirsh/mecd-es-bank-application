@@ -1,3 +1,6 @@
+# Configuration
+EB_ENV = bank-website-env
+
 # Default target with instructions
 default:
 	@echo "Available targets:"
@@ -11,9 +14,15 @@ bank_django/frontend/dist/.build: $(shell find bank_django/frontend -type f \( -
 
 frontend: bank_django/frontend/dist/.build
 
+django_static:
+	cd bank_django && python manage.py collectstatic --noinput
+
 # Start Django development server
 django_start: frontend
 	cd bank_django && python manage.py runserver
+
+deploy: frontend django_static
+	cd bank_django && eb use $(EB_ENV) && eb deploy
 
 # Clean temporary and build files
 clean:
@@ -21,4 +30,4 @@ clean:
 	rm -rf bank_django/frontend/dist
 
 # Declare phony targets
-.PHONY: retrieve clean frontend django_start
+.PHONY: retrieve clean frontend django_start django_static
