@@ -205,13 +205,23 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     def list(self, request, *args, **kwargs):
-        self.auth_user_is(request, "officer") # TODO: customer should be able to list his own applications
-        return super().list(request, *args, **kwargs)
-    
-    def retrieve(self, request, *args, **kwargs):
-        self.auth_user_is(request, "officer") # TODO: customer should be able to retrieve his own applications
-        return super().retrieve(request, *args, **kwargs)
+        user_role = self.auth_user_is(request, ["officer", "customer"])  # Permitir tanto 'officer' quanto 'customer'
 
+        if user_role == "customer":
+            # Filtrar somente as aplicações do cliente autenticado
+            self.queryset = self.queryset.filter(customer=request.user)
+
+        return super().list(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        user_role = self.auth_user_is(request, ["officer", "customer"])  # Permitir tanto 'officer' quanto 'customer'
+
+        instance = self.get_object()
+        if user_role == "customer" and instance.customer != request.user:
+            # Impedir acesso a registros que não pertencem ao cliente autenticado
+            return Response({"error": "You are not authorized to access this application."}, status=403)
+
+        return super().retrieve(request, *args, **kwargs)
     def workflow(self, input_data):
         """
         Starts the workflow and retrieves the results.

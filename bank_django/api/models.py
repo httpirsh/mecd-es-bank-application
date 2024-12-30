@@ -95,6 +95,7 @@ class LoanApplication(models.Model):
 
     def __str__(self):
         return f"LoanApplication(id={self.id}, user={self.username}, amount={self.amount}, status={self.application_status})"    
+from django.db import models
 
 class LoanEvaluation(models.Model):
     application = models.OneToOneField(LoanApplication, on_delete=models.CASCADE, unique=True)
@@ -112,6 +113,10 @@ class LoanEvaluation(models.Model):
     officer = models.CharField("Officer evaluating the loan application", max_length=255)
     created = models.DateTimeField("When was the evaluation record created", auto_now_add=True)
     updated = models.DateTimeField("Last time the evaluation was updated", auto_now=True)
+    
+    # Novo campo para armazenar o timeslot da entrevista
+    timeslot = models.DateTimeField("Interview Timeslot", null=True, blank=True)
+
 
     def __str__(self):
         return f"LoanEvaluation(id={self.application}, officer={self.officer}, status={self.status})"
@@ -189,3 +194,4 @@ class User(models.Model):
             table.delete_item(Key={"username": self.username})
         except ClientError as e:
             raise Exception(f"Error deleting from DynamoDB: {e}")
+    

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-Progress Evaluations</title>
+</head>
+<body>
+    <h1>In-Progress Evaluations</h1>
+
+    <ul>
+        {% for evaluation in evaluations %}
+            <li>
+                <strong>Application ID:</strong> {{ evaluation.application.id }} <br>
+                <strong>Customer:</strong> {{ evaluation.application.customer }} <br>
+                <strong>Evaluation Status:</strong> {{ evaluation.status }} <br>
+            </li>
+        {% empty %}
+            <p>No evaluations in progress at the moment.</p>
+        {% endfor %}
+    </ul>
+</body>
+</html>
