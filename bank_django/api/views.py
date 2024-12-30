@@ -10,7 +10,6 @@ from utils import generate_jwt_token, get_jwt_decoded, get_user_from_dynamodb, s
 from .serializers import LoanApplicationSerializer, LoanEvaluationSerializer
 import datetime
 import base64
-import os
 import boto3
 import json
 import time

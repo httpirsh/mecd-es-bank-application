@@ -58,9 +58,7 @@ class Command(BaseCommand):
                             self.stdout.write(self.style.NOTICE(f"Searching for user {username} in dynamo..."))
                             user = User.get(username)
 
-                            current_user_type = user.user_type
                             user.face_id = face_id  # Assign the Rekognition face_id to the user
-                            user.user_type = current_user_type
 
                             user.save() 
                             self.stdout.write(self.style.SUCCESS(f"Updated user {user.username} with face_id {face_id}"))
