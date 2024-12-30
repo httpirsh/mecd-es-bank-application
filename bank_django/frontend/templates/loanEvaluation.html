@@ -1,22 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evaluate Application</title>
+    <title>Loan Evaluated</title>
 </head>
 <body>
-    <h1>Evaluate Loan Application</h1>
+  <h1>Evaluate Loan Application</h1>
 
     <h2>Application Details</h2>
-    <p><strong>ID:</strong> {{ evaluation.application.id }}</p>
-    <p><strong>Applicant Name:</strong> {{ evaluation.application.name }}</p>
-    <p><strong>Loan Amount:</strong> {{ evaluation.application.amount }}</p>
-    <p><strong>Status:</strong> {{ evaluation.status }}</p>
+    <p><strong>ID:</strong> {{ loan.id }}</p>
+    <p><strong>Applicant Name:</strong> {{ loan.username }}</p>
+    <p><strong>Monthly Income:</strong> {{ loan.monthly_income }}</p>
+    <p><strong>Monthly Expenses:</strong> {{ loan.monthly_expenses }}</p>
+    <p><strong>Loan Duration:</strong> {{ loan.duration }}</p>
+    <p><strong>Credit Score:</strong> {{ loan.credit_score }}</p>
+    <p><strong>Loan Amount:</strong> {{ loan.amount }}</p>
+    <p><strong>Status:</strong> {{ loan.application_status }}</p>
 
     <h2>Evaluation Form</h2>
     <form method="post">
         {% csrf_token %}
+        
+        <!-- Status Dropdown -->
         <label for="status">Status:</label>
         <select name="status" id="status" onchange="toggleTimeslotField(this.value)">
             <option value="accept" {% if evaluation.status == "accept" %}selected{% endif %}>Accepted</option>
@@ -26,19 +30,22 @@
         </select>
         <br><br>
 
+        <!-- Timeslot Selection -->
         <div id="timeslot-field" style="display: none;">
-            <label for="timeslot">Select Timeslot:</label>
-            <select name="timeslot" id="timeslot">
-                <option value="">-- Select a Timeslot --</option>
-                {% for timeslot in available_timeslots %}
-                    <option value="{{ timeslot|date:'Y-m-d H:i:s' }}">
-                        {{ timeslot|date:'D, M j, Y, H:i' }}
-                    </option>
-                {% endfor %}
-            </select>
+          <label for="timeslot">Select Timeslot:</label>
+          <select name="timeslot" id="timeslot">
+              <option value="">-- Select a Timeslot --</option>
+              {% for timeslot in available_timeslots %}
+                  <option value="{{ timeslot|date:'Y-m-d H:i:s' }}" 
+                          {% if evaluation.timeslot == timeslot %}selected{% endif %}>
+                      {{ timeslot|date:'D, M j, Y, H:i' }}
+                  </option>
+              {% endfor %}
+          </select>
         </div>
         <br><br>
 
+        <!-- Notes Section -->
         <label for="notes">Notes:</label><br>
         <textarea name="notes" id="notes" rows="5" cols="40">{{ evaluation.notes }}</textarea>
         <br><br>
@@ -46,8 +53,10 @@
         <button type="submit">Submit Evaluation</button>
     </form>
 
-    <a href="{% url 'applications' %}">Back to Applications</a>
+    <!-- Link to return to applications list -->
+    <button href="{% url 'loan_requests_list' %}">Loan Requests List</button></p>
 
+    <!-- JavaScript to toggle timeslot visibility -->
     <script>
         function toggleTimeslotField(status) {
             const field = document.getElementById('timeslot-field');

@@ -95,7 +95,6 @@ class LoanApplication(models.Model):
 
     def __str__(self):
         return f"LoanApplication(id={self.id}, user={self.username}, amount={self.amount}, status={self.application_status})"    
-from django.db import models
 
 class LoanEvaluation(models.Model):
     application = models.OneToOneField(LoanApplication, on_delete=models.CASCADE, unique=True)
