@@ -60,7 +60,7 @@ def manager_login(request):
             response.set_cookie(
                 'jwt_token',
                 token,
-                max_age=datetime.timedelta(days=1),
+                max_age=timedelta(days=1),
                 httponly=True, # Cannot be accessed via JavaScript
                 secure=True, # Use only over HTTPS
                 samesite='Strict' # Protects against CSRF attacks

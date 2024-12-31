@@ -130,6 +130,7 @@ class User(models.Model):
     phone = models.CharField(max_length=20)
     face_id = models.CharField(max_length=255)
     user_type = models.CharField(max_length=255)
+    password = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         db_table = 'User'
@@ -154,7 +155,8 @@ class User(models.Model):
             "email": self.email,
             "phone": self.phone,
             "face_id": self.face_id,
-            "user_type": self.user_type
+            "user_type": self.user_type,
+            "password": self.password
         }
 
         # Write item to DynamoDB
@@ -177,7 +179,8 @@ class User(models.Model):
                     email=item["email"],
                     phone=item["phone"],
                     face_id=item["face_id"],
-                    user_type=item["user_type"]
+                    user_type=item["user_type"],
+                    password=item["password"]
                 )
             else:
                 return None

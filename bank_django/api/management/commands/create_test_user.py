@@ -36,6 +36,7 @@ def add_user_to_dynamodb(username, email, phone, user_type, password=None, face_
         else:
             hashed_password = None
 
+
         # Add the user to the DynamoDB table
         response = table.put_item(
             Item={
