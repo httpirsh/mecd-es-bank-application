@@ -204,7 +204,7 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
             return JsonResponse({"error": str(e)}, status=500)
 
     def list(self, request, *args, **kwargs):
-        user_role = self.auth_user_is(request, ["officer", "customer"])  # Permitir tanto 'officer' quanto 'customer'
+        user_role = auth_user_is(request, ["officer", "customer"])
 
         if user_role == "customer":
             # Filtrar somente as aplicações do cliente autenticado
